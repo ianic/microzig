@@ -61,12 +61,12 @@ pub fn parsePin(comptime spec: []const u8) type {
 
     if (spec[0] != 'P')
         @compileError(invalid_format_msg);
-    if (spec[1] < 'A' or spec[1] > 'I')
+    if (spec[1] < 'A' or spec[1] > 'H')
         @compileError(invalid_format_msg);
 
     return struct {
         const pin_number: comptime_int = std.fmt.parseInt(u4, spec[2..], 10) catch @compileError(invalid_format_msg);
-        /// 'A'...'I'
+        /// 'A'...'H'
         const gpio_port_name = spec[1..2];
         const gpio_port = @field(regs, "GPIO" ++ gpio_port_name);
         const suffix = std.fmt.comptimePrint("{d}", .{pin_number});
