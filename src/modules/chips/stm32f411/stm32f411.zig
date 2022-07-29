@@ -761,6 +761,39 @@ fn setPllCfgr(comptime m: u16, comptime n: u16, comptime p: u16, comptime q: u16
     while (cfgr.SWS1 != 1 and cfgr.SWS0 != 0) : (cfgr = regs.RCC.CFGR.read()) {}
 }
 
+test "show available hse pll parameters" {
+    var pa = [_]u64{ 2, 4, 6, 8 };
+
+    const source: u64 = 25_000_000; // hse
+    //const source: u64 = 16_000_000; // hsi
+    const fs_max: u64 = 100_000_000;
+    const fusb: u64 = 48_000_000;
+
+    var m: u64 = 2;
+    while (m <= 63) : (m += 1) {
+        var n: u64 = 50;
+        while (n <= 432) : (n += 1) {
+            var q: u64 = 2;
+            while (q <= 15) : (q += 1) {
+                for (pa) |p| {
+                    var fv = source * n / m;
+                    var fs = fv / p;
+                    var fu = fv / q;
+                    if (fu == fusb and fs <= fs_max) {
+                        std.debug.print("fs: {d} MHz {d}  ", .{ fs / 1_000_000, fs });
+                        std.debug.print("m: {d:2}, n: {d:3}, q: {d:2}, p: {d}\n", .{ m, n, q, p });
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn bitOf(x: u16, index: u4) u1 {
+    const mask = @as(u16, 1) << index;
+    return if (x & mask == mask) 1 else 0;
+}
+
 test "is bit set" {
     try std.testing.expectEqual(bitOf(336, 0), 0);
     try std.testing.expectEqual(bitOf(336, 1), 0);
@@ -772,11 +805,6 @@ test "is bit set" {
     try std.testing.expectEqual(bitOf(336, 4), 1);
     try std.testing.expectEqual(bitOf(336, 6), 1);
     try std.testing.expectEqual(bitOf(336, 8), 1);
-}
-
-fn bitOf(x: u16, index: u4) u1 {
-    const mask = @as(u16, 1) << index;
-    return if (x & mask == mask) 1 else 0;
 }
 
 pub const delay = struct {
