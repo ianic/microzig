@@ -507,14 +507,35 @@ pub const registers = struct {
         /// sample time register 1
         pub const SMPR1 = @intToPtr(*volatile Mmio(32, packed struct {
             /// Sample time bits
-            SMPx_x: u32,
+            ///  Channel x sampling time selection
+            SMP10: u3,
+            SMP11: u3,
+            SMP12: u3,
+            SMP13: u3,
+            SMP14: u3,
+            SMP15: u3,
+            SMP16: u3,
+            SMP17: u3,
+            SMP18: u3,
+            padding: u5,
         }), base_address + 0xc);
 
         /// address: 0x40012010
         /// sample time register 2
         pub const SMPR2 = @intToPtr(*volatile Mmio(32, packed struct {
             /// Sample time bits
-            SMPx_x: u32,
+            ///  Channel x sampling time selection
+            SMP0: u3,
+            SMP1: u3,
+            SMP2: u3,
+            SMP3: u3,
+            SMP4: u3,
+            SMP5: u3,
+            SMP6: u3,
+            SMP7: u3,
+            SMP8: u3,
+            SMP9: u3,
+            padding: u2,
         }), base_address + 0x10);
 
         /// address: 0x40012014
