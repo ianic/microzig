@@ -1032,3 +1032,67 @@ test "counter with overflow" {
     try std.testing.expectEqual(counter.next, 3);
     try std.testing.expectEqual(counter.overflow, false);
 }
+
+pub fn Scheduler(comptime tasks_count: u8) type {
+    return struct {
+        tasks: [tasks_count]Task = .{Task{}} ** tasks_count,
+        cnt: u8 = 0,
+        ticks: u32 = 0,
+
+        const Self = @This();
+
+        pub fn init() Self {
+            return Self{};
+        }
+
+        pub fn new_task(self: *Self) *Task {
+            var task = &self.tasks[self.cnt];
+            task.ticks = &self.ticks;
+            self.cnt += 1;
+            return task;
+        }
+
+        pub fn tick(self: *Self) void {
+            // TODO: handle overrun in ticks
+            self.ticks += 1;
+            self.try_run();
+        }
+
+        pub fn try_run(self: *Self) void {
+            var i: u8 = 0;
+            while (i < self.cnt) : (i += 1) {
+                var task = &self.tasks[i];
+                task.try_run();
+            }
+        }
+    };
+}
+
+pub const Task = struct {
+    ticks: *u32 = undefined,
+    frame: anyframe = undefined,
+    resume_at: u32 = 0,
+
+    const Self = @This();
+
+    fn try_run(self: *Self) void {
+        if (self.frame == undefined or
+            self.resume_at == 0 or
+            self.resume_at > self.ticks.*)
+        {
+            return;
+        }
+
+        var fr = self.frame;
+        self.resume_at = 0;
+        self.frame = undefined;
+        resume fr;
+    }
+
+    pub fn sleep(self: *Self, ms: u32) void {
+        suspend {
+            self.resume_at = self.ticks.* + ms;
+            self.frame = @frame();
+        }
+    }
+};
