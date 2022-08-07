@@ -9,6 +9,7 @@ const led_pin = if (micro.config.has_board)
         .@"STM32F4DISCOVERY" => micro.Pin("LD5"),
         .@"STM32F429IDISCOVERY" => micro.Pin("LD4"),
         .@"Longan Nano" => micro.Pin("PA2"),
+        .@"blackpill411" => micro.Pin("PC13"),
         else => @compileError("unknown board"),
     }
 else switch (micro.config.chip_name) {

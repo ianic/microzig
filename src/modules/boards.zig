@@ -43,3 +43,9 @@ pub const longan_nano = Board{
     .path = root_path ++ "boards/longan-nano/longan-nano.zig",
     .chip = chips.gd32vf103xb,
 };
+
+pub const blackpill411 = Board{
+    .name = "blackpill411",
+    .path = root_path ++ "boards/blackpill411/blackpill411.zig",
+    .chip = chips.stm32f411ce,
+};

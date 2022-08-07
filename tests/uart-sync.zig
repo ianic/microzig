@@ -23,6 +23,11 @@ const cfg = if (micro.config.has_board)
             .uart_idx = 1,
             .pins = .{ .tx = null, .rx = null },
         },
+        .@"blackpill411" => .{
+            .led_pin = micro.Pin("PA2"),
+            .uart_idx = 1,
+            .pins = .{ .tx = null, .rx = null },
+        },
         else => @compileError("unknown board"),
     }
 else switch (micro.config.chip_name) {

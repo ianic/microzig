@@ -36,6 +36,7 @@ const std = @import("std");
 const micro = @import("microzig");
 const chip = @import("registers.zig");
 const regs = chip.registers;
+pub const irq = @import("irq.zig");
 
 pub usingnamespace chip;
 
@@ -624,6 +625,8 @@ pub fn init() void {
     led_pin.init();
 }
 
+// board has key connected to the port PA0
+// activate key
 fn initKey() void {
     // init key as input
     //micro.Gpio(micro.Pin("PA0"), .{ .mode = .input }).init();
@@ -685,6 +688,10 @@ fn initClock() void {
 
     // Disable HSI
     regs.RCC.CR.modify(.{ .HSION = 0 });
+
+    // Enable LSE
+    //regs.RCC.BDCR.modify(.{ .LSEON = 1 });
+    //while (regs.RCC.BDCR.read().LSERDY != 1) {}
 }
 
 // Fv = source * n / m
@@ -808,7 +815,7 @@ test "is bit set" {
 }
 
 pub const delay = struct {
-    fn sleep(ms: u32) void {
+    pub fn sleep(ms: u32) void {
         const loop_ops = 5; // estimate number of instruction per loop
         var ticks: u32 = clock_frequencies.cpu / 1000 * ms / loop_ops;
         while (ticks > 0) : (ticks -= 1) {
@@ -840,15 +847,15 @@ pub const led = struct {
             delay.short();
         }
     }
+
+    pub fn on() void {
+        led_pin.setToLow();
+    }
+
+    pub fn off() void {
+        led_pin.setToHigh();
+    }
 };
-
-pub fn on() void {
-    led_pin.setToLow();
-}
-
-pub fn off() void {
-    led_pin.setToHigh();
-}
 
 // init SysTick interrupt every ms milliseconds
 pub fn systick(ms: u16) void {
@@ -866,3 +873,87 @@ pub fn systick(ms: u16) void {
     //
     regs.SCS.SysTick.CTRL.modify(.{ .ENABLE = 1, .CLKSOURCE = 0, .TICKINT = 1 });
 }
+
+test "bit mask" {
+    var val: u32 = 1;
+    const mask: u32 = 0x10;
+    val = val | mask;
+    std.debug.print("mask: {x} {x}\n", .{ val, ~mask });
+}
+
+// const microzig = micro;
+// //const VectorTable = @import("registers.zig").VectorTable;
+// const app = microzig.app;
+
+// fn isValidField(field_name: []const u8) bool {
+//     return !std.mem.startsWith(u8, field_name, "reserved") and
+//         !std.mem.eql(u8, field_name, "initial_stack_pointer") and
+//         !std.mem.eql(u8, field_name, "reset");
+// }
+
+// // will be imported by microzig.zig to allow system startup.
+// pub var vector_table: chip.VectorTable = blk: {
+//     var tmp: microzig.chip.VectorTable = .{
+//         .initial_stack_pointer = microzig.config.end_of_stack,
+//         .Reset = .{ .C = microzig.cpu.startup_logic._start },
+//     };
+//     if (@hasDecl(app, "interrupts")) {
+//         if (@typeInfo(app.interrupts) != .Struct)
+//             @compileLog("root.interrupts must be a struct");
+
+//         inline for (@typeInfo(app.interrupts).Struct.decls) |decl| {
+//             const function = @field(app.interrupts, decl.name);
+
+//             if (!@hasField(chip.VectorTable, decl.name)) {
+//                 var msg: []const u8 = "There is no such interrupt as '" ++ decl.name ++ "'. Declarations in 'interrupts' must be one of:\n";
+//                 inline for (std.meta.fields(chip.VectorTable)) |field| {
+//                     if (isValidField(field.name)) {
+//                         msg = msg ++ "    " ++ field.name ++ "\n";
+//                     }
+//                 }
+
+//                 @compileError(msg);
+//             }
+
+//             if (!isValidField(decl.name))
+//                 @compileError("You are not allowed to specify '" ++ decl.name ++ "' in the vector table, for your sins you must now pay a $5 fine to the ZSF: https://github.com/sponsors/ziglang");
+
+//             // @compileLog("creating interrupt handler na pravom mjestu ", decl.name);
+//             // if (decl.name[0] == 69) {
+//             //     @field(tmp, decl.name) = irq.interrupts.EXTI0(function);
+//             // } else {
+//             @field(tmp, decl.name) = createInterruptVector(function);
+//             //}
+//         }
+//     }
+//     break :blk tmp;
+// };
+
+// fn createInterruptVector(
+//     comptime function: anytype,
+// ) microzig.chip.InterruptVector {
+//     const calling_convention = @typeInfo(@TypeOf(function)).Fn.calling_convention;
+//     //@compileLog("calling_convention ", calling_convention);
+//     return switch (calling_convention) {
+//         .C => .{ .C = function },
+//         .Naked => .{ .Naked = function },
+//         // for unspecified calling convention we are going to generate small wrapper
+//         .Unspecified => .{
+//             .C = struct {
+//                 fn wrapper() callconv(.C) void {
+//                     if (calling_convention == .Unspecified) // TODO: workaround for some weird stage1 bug
+//                         @call(.{ .modifier = .always_inline }, function, .{});
+//                 }
+//             }.wrapper,
+//         },
+
+//         else => |val| {
+//             const conv_name = inline for (std.meta.fields(std.builtin.CallingConvention)) |field| {
+//                 if (val == @field(std.builtin.CallingConvention, field.name))
+//                     break field.name;
+//             } else unreachable;
+
+//             @compileError("unsupported calling convention for interrupt vector: " ++ conv_name);
+//         },
+//     };
+// }
