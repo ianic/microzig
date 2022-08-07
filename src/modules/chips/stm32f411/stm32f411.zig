@@ -957,3 +957,40 @@ test "bit mask" {
 //         },
 //     };
 // }
+
+pub fn ticker() Ticker {
+    return .{ .ticks = 0 };
+}
+
+pub const Ticker = struct {
+    ticks: u32 = 0,
+
+    const Self = @This();
+    pub fn inc(self: *Self) void {
+        self.ticks += 1;
+    }
+
+    pub fn every(self: *Self, x: u32) TickCounter {
+        return .{
+            .parent = self,
+            .next = self.ticks + x,
+            .count = x,
+        };
+    }
+};
+
+pub const TickCounter = struct {
+    parent: *Ticker = undefined,
+    next: u32 = 0,
+    count: u32 = 0,
+
+    const Self = @This();
+    pub fn ready(self: *Self) bool {
+        var current = self.parent.ticks;
+        if (current > self.next) {
+            self.next = current + self.count;
+            return true;
+        }
+        return false;
+    }
+};

@@ -6,7 +6,7 @@ const board = micro.board;
 
 pub const interrupts = struct {
     pub fn SysTick() void {
-        ticks += 1;
+        ticker.inc();
     }
 
     pub fn EXTI0() void {
@@ -16,17 +16,15 @@ pub const interrupts = struct {
     }
 };
 
-var ticks: u32 = 0;
+var ticker = chip.ticker();
 var blink_enabled = true;
 
 pub fn main() void {
     board.init(.{});
 
-    var last: u32 = 0;
+    var counter = ticker.every(500);
     while (true) {
-        var current = ticks;
-        if (current != last and blink_enabled and current % 500 == 0) {
-            last = current;
+        if (counter.ready() and blink_enabled) {
             board.led.toggle();
         }
     }
