@@ -4,6 +4,7 @@ pub const chip = micro.chip;
 pub const regs = chip.registers;
 
 pub const clock = @import("clock.zig");
+pub const irq = chip.irq;
 
 pub const Config = struct {
     clock: clock.Config = clock.hse_high,
@@ -53,7 +54,7 @@ fn keyInit() void {
     regs.EXTI.FTSR.modify(.{ .TR0 = 0 });
     regs.EXTI.IMR.modify(.{ .MR0 = 1 });
     //regs.NVIC.ISER0.modify(.{ .SETENA = 0x40 });
-    chip.irq.enable(.exti0);
+    irq.enable(.exti0);
 }
 
 fn initFeatures() void {

@@ -967,15 +967,20 @@ pub const Ticker = struct {
 
     const Self = @This();
     pub fn inc(self: *Self) void {
+        if (self.ticks == 0xFFFFFFFF) {
+            self.ticks = 0;
+            return;
+        }
         self.ticks += 1;
     }
 
     pub fn every(self: *Self, x: u32) TickCounter {
-        return .{
+        var tc = TickCounter{
             .parent = self,
-            .next = self.ticks + x,
             .count = x,
         };
+        tc.set(self.ticks);
+        return tc;
     }
 };
 
@@ -983,14 +988,47 @@ pub const TickCounter = struct {
     parent: *Ticker = undefined,
     next: u32 = 0,
     count: u32 = 0,
+    overflow: bool = false,
 
     const Self = @This();
+
     pub fn ready(self: *Self) bool {
         var current = self.parent.ticks;
-        if (current > self.next) {
-            self.next = current + self.count;
+        if (self.overflow and current > 0x7FFFFFFF) {
+            return false;
+        }
+        if (current >= self.next) {
+            self.set(current);
             return true;
         }
         return false;
     }
+
+    fn set(self: *Self, current: u32) void {
+        self.overflow = @addWithOverflow(u32, current, self.count, &self.next);
+    }
 };
+
+test "ticker overflow" {
+    var t = ticker();
+    t.ticks = 0xFFFFFFFF;
+    t.inc();
+    try std.testing.expectEqual(t.ticks, 0);
+}
+
+test "counter with overflow" {
+    var t = ticker();
+    t.ticks = 0xFFFFFFFF;
+
+    var counter = t.every(2);
+    try std.testing.expect(!counter.ready());
+    t.inc();
+    try std.testing.expect(!counter.ready());
+    try std.testing.expectEqual(t.ticks, 0);
+    try std.testing.expectEqual(counter.next, 1);
+    try std.testing.expectEqual(counter.overflow, true);
+    t.inc();
+    try std.testing.expect(counter.ready());
+    try std.testing.expectEqual(counter.next, 3);
+    try std.testing.expectEqual(counter.overflow, false);
+}
