@@ -53,7 +53,7 @@ fn keyInit() void {
     regs.EXTI.FTSR.modify(.{ .TR0 = 0 });
     regs.EXTI.IMR.modify(.{ .MR0 = 1 });
     //regs.NVIC.ISER0.modify(.{ .SETENA = 0x40 });
-    chip.irq.enable(.EXTI0);
+    chip.irq.enable(.exti0);
 }
 
 fn initFeatures() void {
