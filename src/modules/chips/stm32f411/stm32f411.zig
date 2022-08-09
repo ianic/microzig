@@ -1033,40 +1033,45 @@ test "counter with overflow" {
     try std.testing.expectEqual(counter.overflow, false);
 }
 
-pub fn Scheduler(comptime tasks_count: u8) type {
-    return struct {
-        tasks: [tasks_count]Task = .{Task{}} ** tasks_count,
-        cnt: u8 = 0,
-        ticks: u32 = 0,
-
-        const Self = @This();
-
-        pub fn init() Self {
-            return Self{};
-        }
-
-        pub fn new_task(self: *Self) *Task {
-            var task = &self.tasks[self.cnt];
-            task.ticks = &self.ticks;
-            self.cnt += 1;
-            return task;
-        }
-
-        pub fn tick(self: *Self) void {
-            // TODO: handle overrun in ticks
-            self.ticks += 1;
-            self.try_run();
-        }
-
-        pub fn try_run(self: *Self) void {
-            var i: u8 = 0;
-            while (i < self.cnt) : (i += 1) {
-                var task = &self.tasks[i];
-                task.try_run();
-            }
-        }
-    };
+pub fn tasks(comptime no: u32, ticks_ptr: *u32) [no]Task {
+    var a = [_]Task{Task{ .ticks = ticks_ptr }} ** 2;
+    return a;
 }
+
+pub fn scheduler(tsks: []Task, ticks_ptr: *u32) Scheduler {
+    return Scheduler.init(tsks, ticks_ptr);
+}
+
+pub const Scheduler = struct {
+    tasks: []Task = undefined,
+    ticks: *u32 = undefined,
+
+    const Self = @This();
+
+    pub fn init(tsks: []Task, ticks_ptr: *u32) Self {
+        return .{ .tasks = tsks, .ticks = ticks_ptr };
+    }
+
+    pub fn getTask(self: *Self, no: u8) *Task {
+        var task = &self.tasks[no];
+        task.ticks = self.ticks;
+        return task;
+    }
+
+    pub fn tick(self: *Self) void {
+        // TODO: handle overrun in ticks
+        //self.ticks += 1;
+        self.run();
+    }
+
+    pub fn run(self: *Self) void {
+        var i: u8 = 0;
+        while (i < self.tasks.len) : (i += 1) {
+            var task = &self.tasks[i];
+            task.try_run();
+        }
+    }
+};
 
 pub const Task = struct {
     ticks: *u32 = undefined,
