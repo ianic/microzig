@@ -49,3 +49,9 @@ pub const blackpill411 = Board{
     .path = root_path ++ "boards/blackpill411/blackpill411.zig",
     .chip = chips.stm32f411ce,
 };
+
+pub const nucleo_stm32f411 = Board{
+    .name = "nucleo_stm32f411",
+    .path = root_path ++ "boards/nucleo_stm32f411/nucleo_stm32f411.zig",
+    .chip = chips.stm32f411ce,
+};
