@@ -61,14 +61,18 @@ pub const hse_frequency = 8_000_000; // 8 MHz
 //
 pub const hse_100 = .{
     .source = .hse,
-    .m = 2,
-    .n = 100,
-    .p = 4,
-    .q = 8,
+    .pll = .{
+        .m = 2,
+        .n = 100,
+        .p = 4,
+        .q = 8,
+    },
     .latency = 3,
-    .ahb_prescaler = 1,
-    .apb1_prescaler = 2,
-    .apb2_prescaler = 1,
+    .prescaler = .{
+        .ahb = 1,
+        .apb1 = 2,
+        .apb2 = 1,
+    },
     .frequencies = .{
         .source = hse_frequency,
         .cpu = 100_000_000,
@@ -80,14 +84,18 @@ pub const hse_100 = .{
 
 pub const hse_96 = .{
     .source = .hse,
-    .m = 2,
-    .n = 96,
-    .p = 4,
-    .q = 8,
+    .pll = .{
+        .m = 2,
+        .n = 96,
+        .p = 4,
+        .q = 8,
+    },
     .latency = 3,
-    .ahb_prescaler = 1,
-    .apb1_prescaler = 2,
-    .apb2_prescaler = 1,
+    .prescaler = .{
+        .ahb = 1,
+        .apb1 = 2,
+        .apb2 = 1,
+    },
     .frequencies = .{
         .source = hse_frequency,
         .cpu = 96_000_000,

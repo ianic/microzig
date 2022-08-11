@@ -7,15 +7,23 @@ pub const max_apb1_frequency = 50_000_000;
 
 pub const Config = struct {
     source: ClockSource,
+    pll: Pll,
+    latency: u3, // chapter 3.4
+    prescaler: Prescaler,
+    frequencies: Frequencies,
+};
+
+pub const Pll = struct {
     m: u16,
     n: u16,
     p: u16,
     q: u16,
-    latency: u3, // chapter 3.4
-    ahb_prescaler: u16, // chapter 6.3.3
-    apb1_prescaler: u8,
-    apb2_prescaler: u8,
-    frequencies: Frequencies,
+};
+
+pub const Prescaler = struct { // chapter 6.3.3
+    ahb: u16 = 1,
+    apb1: u8 = 2,
+    apb2: u8 = 1,
 };
 
 pub const ClockSource = enum {
@@ -34,14 +42,18 @@ pub const Frequencies = struct {
 // this ensures that usb has required 48MHz
 pub const hsi_96 = .{
     .source = .hsi,
-    .m = 2,
-    .n = 72,
-    .p = 6,
-    .q = 12,
+    .pll = .{
+        .m = 2,
+        .n = 72,
+        .p = 6,
+        .q = 12,
+    },
     .latency = 3,
-    .ahb_prescaler = 1,
-    .apb1_prescaler = 2,
-    .apb2_prescaler = 1,
+    .prescaler = .{
+        .ahb = 1,
+        .apb1 = 2,
+        .apb2 = 1,
+    },
     .frequencies = .{
         .source = hsi_frequency,
         .cpu = 96_000_000,
@@ -53,14 +65,18 @@ pub const hsi_96 = .{
 
 pub const hsi_100 = .{
     .source = .hsi,
-    .m = 16,
-    .n = 400,
-    .p = 4,
-    .q = 7,
+    .pll = .{
+        .m = 16,
+        .n = 400,
+        .p = 4,
+        .q = 7,
+    },
     .latency = 3,
-    .ahb_prescaler = 1,
-    .apb1_prescaler = 2,
-    .apb2_prescaler = 1,
+    .prescaler = .{
+        .ahb = 1,
+        .apb1 = 2,
+        .apb2 = 1,
+    },
     .frequencies = .{
         .source = hsi_frequency,
         .cpu = 100_000_000,
@@ -86,9 +102,9 @@ pub fn init(comptime cfg: Config) void {
     }
     // set prescalers
     regs.RCC.CFGR.modify(.{
-        .HPRE = prescaler_bits(u4, cfg.ahb_prescaler), // AHB prescaler
-        .PPRE1 = prescaler_bits(u3, cfg.apb1_prescaler), // APB Low speed prescaler APB1
-        .PPRE2 = prescaler_bits(u3, cfg.apb2_prescaler), // APB high-speed prescaler APB2
+        .HPRE = prescaler_bits(u4, cfg.prescaler.ahb), // AHB prescaler
+        .PPRE1 = prescaler_bits(u3, cfg.prescaler.apb1), // APB Low speed prescaler APB1
+        .PPRE2 = prescaler_bits(u3, cfg.prescaler.apb2), // APB high-speed prescaler APB2
     });
 
     initPLL(cfg);
@@ -106,11 +122,13 @@ fn voltage_scaling_output(cpu_freq: u32) u2 {
 }
 
 fn checkConfig(comptime cfg: Config) void {
+    const pll = cfg.pll;
+
     // check ranges for pll parameters
-    if (!((cfg.m >= 2 and cfg.m <= 63) and
-        (cfg.n >= 50 and cfg.n <= 432) and
-        (cfg.p == 2 or cfg.p == 4 or cfg.p == 6 or cfg.p == 8) and
-        (cfg.q >= 2 and cfg.q <= 15)))
+    if (!((pll.m >= 2 and pll.m <= 63) and
+        (pll.n >= 50 and pll.n <= 432) and
+        (pll.p == 2 or pll.p == 4 or pll.p == 6 or pll.p == 8) and
+        (pll.q >= 2 and pll.q <= 15)))
     {
         @compileError("wrong RCC PLL configuration values");
     }
@@ -120,8 +138,8 @@ fn checkConfig(comptime cfg: Config) void {
     }
 
     // check frequencies calculations and max values
-    const fv = cfg.frequencies.source / cfg.m * cfg.n;
-    const cpu = fv / cfg.p;
+    const fv = cfg.frequencies.source / pll.m * pll.n;
+    const cpu = fv / pll.p;
     if (cfg.frequencies.cpu != cpu) {
         @compileError("wrong cpu frequency");
     }
@@ -129,16 +147,16 @@ fn checkConfig(comptime cfg: Config) void {
         @compileError("max cpu frequency exceeded");
     }
 
-    if (cfg.frequencies.ahb != cpu / cfg.ahb_prescaler) {
+    if (cfg.frequencies.ahb != cpu / cfg.prescaler.ahb) {
         @compileError("wrong ahb frequency");
     }
-    if (cfg.frequencies.apb1 != cpu / cfg.apb1_prescaler) {
+    if (cfg.frequencies.apb1 != cpu / cfg.prescaler.apb1) {
         @compileError("wrong apb1 frequency");
     }
     if (cfg.frequencies.apb1 > max_apb1_frequency) {
         @compileError("max apb1 frequency exceeded");
     }
-    if (cfg.frequencies.apb2 != cpu / cfg.apb2_prescaler) {
+    if (cfg.frequencies.apb2 != cpu / cfg.prescaler.apb2) {
         @compileError("wrong apb2 frequency");
     }
 
@@ -157,36 +175,37 @@ fn checkConfig(comptime cfg: Config) void {
 fn initPLL(comptime cfg: Config) void {
     regs.RCC.CR.modify(.{ .PLLON = 0 }); // Disable PLL before changing its configuration
 
-    var p0: u1 = if (cfg.p == 4 or cfg.p == 8) 1 else 0;
-    var p1: u1 = if (cfg.p == 6 or cfg.p == 8) 1 else 0;
+    const pll = cfg.pll;
+    var p0: u1 = if (pll.p == 4 or pll.p == 8) 1 else 0;
+    var p1: u1 = if (pll.p == 6 or pll.p == 8) 1 else 0;
     var src: u1 = if (cfg.source == .hse) 1 else 0;
     regs.RCC.PLLCFGR.modify(.{
         .PLLSRC = src,
         // PLLM
-        .PLLM0 = bitOf(cfg.m, 0),
-        .PLLM1 = bitOf(cfg.m, 1),
-        .PLLM2 = bitOf(cfg.m, 2),
-        .PLLM3 = bitOf(cfg.m, 3),
-        .PLLM4 = bitOf(cfg.m, 4),
-        .PLLM5 = bitOf(cfg.m, 5),
+        .PLLM0 = bitOf(pll.m, 0),
+        .PLLM1 = bitOf(pll.m, 1),
+        .PLLM2 = bitOf(pll.m, 2),
+        .PLLM3 = bitOf(pll.m, 3),
+        .PLLM4 = bitOf(pll.m, 4),
+        .PLLM5 = bitOf(pll.m, 5),
         // PLLN
-        .PLLN0 = bitOf(cfg.n, 0),
-        .PLLN1 = bitOf(cfg.n, 1),
-        .PLLN2 = bitOf(cfg.n, 2),
-        .PLLN3 = bitOf(cfg.n, 3),
-        .PLLN4 = bitOf(cfg.n, 4),
-        .PLLN5 = bitOf(cfg.n, 5),
-        .PLLN6 = bitOf(cfg.n, 6),
-        .PLLN7 = bitOf(cfg.n, 7),
-        .PLLN8 = bitOf(cfg.n, 8),
+        .PLLN0 = bitOf(pll.n, 0),
+        .PLLN1 = bitOf(pll.n, 1),
+        .PLLN2 = bitOf(pll.n, 2),
+        .PLLN3 = bitOf(pll.n, 3),
+        .PLLN4 = bitOf(pll.n, 4),
+        .PLLN5 = bitOf(pll.n, 5),
+        .PLLN6 = bitOf(pll.n, 6),
+        .PLLN7 = bitOf(pll.n, 7),
+        .PLLN8 = bitOf(pll.n, 8),
         // PLLP
         .PLLP0 = p0,
         .PLLP1 = p1,
         // PLLQ
-        .PLLQ0 = bitOf(cfg.q, 0),
-        .PLLQ1 = bitOf(cfg.q, 1),
-        .PLLQ2 = bitOf(cfg.q, 2),
-        .PLLQ3 = bitOf(cfg.q, 3),
+        .PLLQ0 = bitOf(pll.q, 0),
+        .PLLQ1 = bitOf(pll.q, 1),
+        .PLLQ2 = bitOf(pll.q, 2),
+        .PLLQ3 = bitOf(pll.q, 3),
     });
 
     regs.RCC.CR.modify(.{ .PLLON = 1 }); // Enable PLL
@@ -272,12 +291,12 @@ pub fn initSysTick(comptime ahb_freq: u32, comptime ms: u16) void {
 
 // use this terminal command to view possible pll config
 // zig test --test-filter pll clock.zig 2>&1 | grep "^fs" | sort | uniq -f 11
-test "show available hse pll parameters" {
+test "show available pll parameters" {
     var pa = [_]u64{ 2, 4, 6, 8 };
 
-    const source: u64 = 8_000_000; // hse
-    //const source: u64 = 16_000_000; // hsi
-    const fs_max: u64 = 100_000_000;
+    //const source: u64 = 8_000_000; // hse
+    const source: u64 = hsi_frequency; // hsi
+    const fs_max: u64 = max_cpu_frequency;
     const fusb: u64 = 48_000_000;
 
     var m: u64 = 2;
