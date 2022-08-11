@@ -16,21 +16,24 @@ pub const Config = struct {
     frequencies: Frequencies,
 };
 
-pub const ClockSource = enum {
-    hsi,
-    hse,
+pub const ClockSource = enum(u8) {
+    hsi = 16, // MHz
+    hse = 8, // MHz
 };
-
-pub const hse_frequency: u32 = 25_000_000;
 
 pub var frequencies: Frequencies = .{};
 
 // defaults after restart
 pub const Frequencies = struct {
-    cpu: u32 = 16_000_000,
-    ahb: u32 = 16_000_000,
-    apb1: u32 = 16_000_000,
-    apb2: u32 = 16_000_000,
+    // cpu: u32 = 16_000_000,
+    // ahb: u32 = 16_000_000,
+    // apb1: u32 = 16_000_000,
+    // apb2: u32 = 16_000_000,
+
+    cpu: u32 = 100_000_000,
+    ahb: u32 = 100_000_000,
+    apb1: u32 = 100_000_000,
+    apb2: u32 = 100_000_000,
 };
 
 // everyting to the max, using hse clock
@@ -73,6 +76,26 @@ pub const hsi_high = .{
     },
 };
 
+// cpu on 100MHz, usb is 400/7 = 57.14MHz
+pub const hsi_max = .{
+    // hsi = 16Mhz
+    .source = .hsi,
+    .m = 16,
+    .n = 400,
+    .p = 4,
+    .q = 7,
+    .latency = 3,
+    .ahb_prescaler = .not_divided,
+    .apb1_prescaler = .div_2,
+    .apb2_prescaler = .not_divided,
+    .frequencies = .{
+        .cpu = 100_000_000,
+        .ahb = 100_000_000,
+        .apb1 = 50_000_000,
+        .apb2 = 100_000_000,
+    },
+};
+
 pub const apb_prescaler = enum(u3) {
     not_divided = 0,
     div_2 = 0b100,
@@ -94,6 +117,9 @@ pub const ahb_prescaler = enum(u4) {
 };
 
 pub fn init(cfg: Config) void {
+    regs.RCC.APB1ENR.modify(.{ .PWREN = 1 }); // enable power interface clock
+    regs.PWR.CR.modify(.{ .VOS = 0b11 }); // voltage scaling output for > 84Mhz
+
     regs.RCC.CR.modify(.{ .HSION = 1 }); // Enable HSI
     while (regs.RCC.CR.read().HSIRDY != 1) {} // Wait for HSI ready
     regs.RCC.CFGR.modify(.{ .SW0 = 0, .SW1 = 0 }); // Select HSI as clock source
@@ -169,8 +195,6 @@ fn initPLL(cfg: Config) void {
         .PLLQ2 = bitOf(cfg.q, 2),
         .PLLQ3 = bitOf(cfg.q, 3),
     });
-
-    regs.PWR.CR.modify(.{ .VOS = 0b11 }); // voltage scaling output for > 84Mhz
 
     regs.RCC.CR.modify(.{ .PLLON = 1 }); // Enable PLL
     while (regs.RCC.CR.read().PLLRDY != 1) {} // Wait for PLL ready
@@ -306,4 +330,65 @@ fn setPllCfgr(comptime m: u16, comptime n: u16, comptime p: u16, comptime q: u16
     // // Wait for PLL selected as clock source
     var cfgr = regs.RCC.CFGR.read();
     while (cfgr.SWS1 != 1 and cfgr.SWS0 != 0) : (cfgr = regs.RCC.CFGR.read()) {}
+}
+
+fn initPLLComptime(comptime cfg: Config) void {
+    if (!((cfg.m >= 2 and cfg.m <= 63) and
+        (cfg.n >= 50 and cfg.n <= 432) and
+        (cfg.p == 2 or cfg.p == 4 or cfg.p == 6 or cfg.p == 8) and
+        (cfg.q >= 2 and cfg.q <= 15) and
+        (cfg.latency >= 0 and cfg.latency <= 6)))
+    {
+        @compileError("wrong RCC PLL configuration values");
+    }
+
+    regs.RCC.CR.modify(.{ .PLLON = 0 }); // Disable PLL before changing its configuration
+
+    var p0: u1 = if (cfg.p == 4 or cfg.p == 8) 1 else 0;
+    var p1: u1 = if (cfg.p == 6 or cfg.p == 8) 1 else 0;
+    var src: u1 = if (cfg.source == .hse) 1 else 0;
+    regs.RCC.PLLCFGR.modify(.{
+        .PLLSRC = src,
+        // PLLM
+        .PLLM0 = bitOf(cfg.m, 0),
+        .PLLM1 = bitOf(cfg.m, 1),
+        .PLLM2 = bitOf(cfg.m, 2),
+        .PLLM3 = bitOf(cfg.m, 3),
+        .PLLM4 = bitOf(cfg.m, 4),
+        .PLLM5 = bitOf(cfg.m, 5),
+        // PLLN
+        .PLLN0 = bitOf(cfg.n, 0),
+        .PLLN1 = bitOf(cfg.n, 1),
+        .PLLN2 = bitOf(cfg.n, 2),
+        .PLLN3 = bitOf(cfg.n, 3),
+        .PLLN4 = bitOf(cfg.n, 4),
+        .PLLN5 = bitOf(cfg.n, 5),
+        .PLLN6 = bitOf(cfg.n, 6),
+        .PLLN7 = bitOf(cfg.n, 7),
+        .PLLN8 = bitOf(cfg.n, 8),
+        // PLLP
+        .PLLP0 = p0,
+        .PLLP1 = p1,
+        // PLLQ
+        .PLLQ0 = bitOf(cfg.q, 0),
+        .PLLQ1 = bitOf(cfg.q, 1),
+        .PLLQ2 = bitOf(cfg.q, 2),
+        .PLLQ3 = bitOf(cfg.q, 3),
+    });
+
+    regs.RCC.CR.modify(.{ .PLLON = 1 }); // Enable PLL
+    while (regs.RCC.CR.read().PLLRDY != 1) {} // Wait for PLL ready
+
+    // Set flash latency wait states
+    // depends on clock and voltage range, chapter 3.4 page 45
+    regs.FLASH.ACR.modify(.{ .LATENCY = cfg.latency });
+
+    regs.RCC.CFGR.modify(.{ .SW1 = 1, .SW0 = 0 }); // // Select PLL as clock source
+    // // Wait for PLL selected as clock source
+    var cfgr = regs.RCC.CFGR.read();
+    while (cfgr.SWS1 != 1 and cfgr.SWS0 != 0) : (cfgr = regs.RCC.CFGR.read()) {}
+}
+
+test "can init be comptime" {
+    initPLLComptime(hsi_high);
 }

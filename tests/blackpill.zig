@@ -21,9 +21,9 @@ var blink_enabled = true;
 pub fn main() void {
     board.init(.{});
 
-    var counter = ticker.every(200);
+    var itv = ticker.interval(200);
     while (true) {
-        if (counter.ready() and blink_enabled) {
+        if (itv.ready(200) and blink_enabled) {
             board.led.toggle();
         }
     }
