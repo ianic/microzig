@@ -84,6 +84,15 @@ pub fn enable(irqn: irq) void {
     }
 }
 
+pub fn disable(irqn: irq) void {
+    const bit = irq_bit(irqn);
+    switch (@enumToInt(irqn)) {
+        0...31 => regs.NVIC.ICER0.modify(.{ .CLRENA = bit }),
+        32...63 => regs.NVIC.ICER1.modify(.{ .CLRENA = bit }),
+        else => regs.NVIC.ICER2.modify(.{ .CLRENA = bit }),
+    }
+}
+
 pub const pending_irq = enum {
     exti0,
     exti1,
