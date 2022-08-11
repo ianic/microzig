@@ -75,22 +75,41 @@ pub const irq = enum(u8) {
 };
 // zig fmt: on
 
-pub fn enable(irqn: irq) void {
-    const bit = irq_bit(irqn);
-    switch (@enumToInt(irqn)) {
-        0...31 => regs.NVIC.ISER0.modify(.{ .SETENA = bit }),
-        32...63 => regs.NVIC.ISER1.modify(.{ .SETENA = bit }),
-        else => regs.NVIC.ISER2.modify(.{ .SETENA = bit }),
-    }
+// 0...31  => regs.NVIC.ISER0.modify(.{ .SETENA = bit }),
+// 32...63 => regs.NVIC.ISER1.modify(.{ .SETENA = bit }),
+// ...
+pub fn enable(comptime irqn: irq) void {
+    setBit(@ptrToInt(regs.NVIC.ISER0), irqn);
 }
 
-pub fn disable(irqn: irq) void {
-    const bit = irq_bit(irqn);
-    switch (@enumToInt(irqn)) {
-        0...31 => regs.NVIC.ICER0.modify(.{ .CLRENA = bit }),
-        32...63 => regs.NVIC.ICER1.modify(.{ .CLRENA = bit }),
-        else => regs.NVIC.ICER2.modify(.{ .CLRENA = bit }),
-    }
+// start from base_addr
+// find word (4 byte) where irqn is
+// set bit in that word
+// for example 40 is second word ISER1/ICER1, 8 bit (0b1_0000_0000)
+fn setBit(base_addr: u32, irqn: irq) void {
+    const reg_no = @enumToInt(irqn) >> 5; // reg 0, 1, 2 ... (every 32 bits is another)
+    const addr = base_addr + 0x4 * reg_no; // switch to the address of the register no x
+    const reg = @intToPtr(*u32, addr); // get pointer to register
+    reg.* = irq_bit(irqn); // set bits in that word
+}
+
+// 0...31  => regs.NVIC.ICER0.modify(.{ .CLRENA = bit }),
+// 32...63 => regs.NVIC.ICER1.modify(.{ .CLRENA = bit }),
+// ...
+pub fn disable(comptime irqn: irq) void {
+    setBit(@ptrToInt(regs.NVIC.ICER0), irqn);
+}
+
+fn irq_bit(irqn: irq) u32 {
+    return @intCast(u32, 1) << @intCast(u5, (@enumToInt(irqn) & 0x1f));
+}
+
+const expectEqual = std.testing.expectEqual;
+test "irq_bit" {
+    try expectEqual(irq_bit(.exti0), 0x40);
+    try expectEqual(irq_bit(.exti15_10), 0b1_0000_0000);
+    try expectEqual(irq_bit(.i2c1_er), 0x1);
+    try expectEqual(irq_bit(.adc), 0x40000);
 }
 
 pub const pending_irq = enum {
@@ -145,17 +164,6 @@ pub fn pending(comptime piq: pending_irq) bool {
     //     // ....
     //     else => unreachable,
     // };
-}
-
-fn irq_bit(irqn: irq) u32 {
-    return @intCast(u32, 1) << @intCast(u5, (@enumToInt(irqn) & 0x1f));
-}
-
-const expectEqual = std.testing.expectEqual;
-test "irq_bit" {
-    try expectEqual(irq_bit(.EXTI0), 0x40);
-    try expectEqual(irq_bit(.I2C1_ER), 0x1);
-    try expectEqual(irq_bit(.ADC), 0x40000);
 }
 
 // NVIC->ISER[IRQn >> 5UL)] = (1UL << (IRQn & 0x1F));
