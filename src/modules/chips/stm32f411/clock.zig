@@ -37,6 +37,7 @@ pub const Frequencies = struct {
     ahb: u32,
     apb1: u32,
     apb2: u32,
+    usb: u32,
 };
 
 // this ensures that usb has required 48MHz
@@ -60,16 +61,18 @@ pub const hsi_96 = .{
         .ahb = 96_000_000,
         .apb1 = 48_000_000,
         .apb2 = 96_000_000,
+        .usb = 48_000_000,
     },
 };
 
+// to calculate pll parameters use test "show available pll ..."
 pub const hsi_100 = .{
     .source = .hsi,
     .pll = .{
         .m = 16,
         .n = 400,
         .p = 4,
-        .q = 7,
+        .q = 8,
     },
     .latency = 3,
     .prescaler = .{
@@ -83,6 +86,7 @@ pub const hsi_100 = .{
         .ahb = 100_000_000,
         .apb1 = 50_000_000,
         .apb2 = 100_000_000,
+        .usb = 50_000_000,
     },
 };
 
@@ -121,7 +125,7 @@ fn voltage_scaling_output(cpu_freq: u32) u2 {
     };
 }
 
-fn checkConfig(comptime cfg: Config) void {
+pub fn checkConfig(comptime cfg: Config) void {
     const pll = cfg.pll;
 
     // check ranges for pll parameters
@@ -158,6 +162,11 @@ fn checkConfig(comptime cfg: Config) void {
     }
     if (cfg.frequencies.apb2 != cpu / cfg.prescaler.apb2) {
         @compileError("wrong apb2 frequency");
+    }
+
+    const usb = fv / pll.q;
+    if (cfg.frequencies.usb != usb) {
+        @compileError("wrong usb frequency");
     }
 
     // depends on clock and voltage range, chapter 3.4 page 45 in RM0383
@@ -318,4 +327,9 @@ test "show available pll parameters" {
             }
         }
     }
+}
+
+test "configs are valid" {
+    checkConfig(hsi_100);
+    checkConfig(hsi_96);
 }

@@ -79,6 +79,7 @@ pub const hse_100 = .{
         .ahb = 100_000_000,
         .apb1 = 50_000_000,
         .apb2 = 100_000_000,
+        .usb = 50_000_000,
     },
 };
 
@@ -102,5 +103,11 @@ pub const hse_96 = .{
         .ahb = 96_000_000,
         .apb1 = 48_000_000,
         .apb2 = 96_000_000,
+        .usb = 48_000_000,
     },
 };
+
+test "configs are valid" {
+    chip.clk.checkConfig(hse_100);
+    chip.clk.checkConfig(hse_96);
+}

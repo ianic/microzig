@@ -38,7 +38,9 @@ const chip = @import("registers.zig");
 const regs = chip.registers;
 pub const irq = @import("irq.zig");
 pub const clk = @import("clock.zig");
-pub const Frequencies = @import("clock.zig").Frequencies;
+pub const Frequencies = clk.Frequencies;
+//pub const hsi_100 = clk.hsi_100;
+//pub const hsi_96 = clk.hsi_96;
 
 pub usingnamespace chip;
 
