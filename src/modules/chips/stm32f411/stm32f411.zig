@@ -42,6 +42,8 @@ pub const Frequencies = clk.Frequencies;
 //pub const hsi_100 = clk.hsi_100;
 //pub const hsi_96 = clk.hsi_96;
 
+pub const gpioPin = @import("gpio.zig").pin;
+
 pub usingnamespace chip;
 
 pub const clock = struct {

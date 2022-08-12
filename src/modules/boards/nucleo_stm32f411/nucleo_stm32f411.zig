@@ -13,7 +13,7 @@ pub fn init(cfg: Config) void {
     if (cfg.led_enabled) {
         led.init();
         //  TODO high speed opcija za gpio
-        regs.GPIOA.OSPEEDR.modify(.{ .OSPEEDR5 = 0b10 });
+        //regs.GPIOA.OSPEEDR.modify(.{ .OSPEEDR5 = 0b10 });
     }
     if (cfg.key_enabled) {
         keyInit();
@@ -21,19 +21,22 @@ pub fn init(cfg: Config) void {
 }
 
 pub const pin_map = .{
-    .led = "PA5", // on-board user led
-    .button = "PC13", // on-board user key
+    .LD2 = "PA5",
+    .B1 = "PC13",
 };
 
-pub const led = micro.Gpio(micro.Pin(pin_map.led), .{
+pub const led = chip.gpioPin(.{
+    .port = .a,
+    .pin = 5,
     .mode = .output,
-    .initial_state = .high,
 });
 
 fn keyInit() void {
     regs.RCC.APB2ENR.modify(.{ .SYSCFGEN = 1 }); // Enable SYSCFG Clock
     // init key as input
-    micro.Gpio(micro.Pin(pin_map.button), .{ .mode = .input }).init();
+    //micro.Gpio(micro.Pin(pin_map.button), .{ .mode = .input }).init();
+    chip.gpioPin(.{ .port = .c, .pin = 13, .mode = .input }).init();
+
     // above micro is same as below regs two lines
     // // PC13 enable input
     // regs.RCC.AHB1ENR.modify(.{ .GPIOCEN = 1 });
