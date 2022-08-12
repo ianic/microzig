@@ -1,3 +1,6 @@
+// Ref:
+// inspired and started as as a copy of: https://github.com/rbino/zig-stm32-blink
+
 const std = @import("std");
 const regs = @import("registers.zig").registers;
 
