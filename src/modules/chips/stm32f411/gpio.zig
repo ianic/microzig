@@ -31,6 +31,13 @@ pub const InputConfig = struct {
     pull: Pull = .none,
     irq_enable: bool = true,
     irq_priority: u8 = 0xf0,
+    irq_trigger: IrqTrigger = .falling,
+};
+
+pub const IrqTrigger = enum {
+    falling,
+    rising,
+    both,
 };
 
 pub const OutputConfig = struct {
@@ -114,7 +121,7 @@ pub fn Pin(comptime spec: []const u8) type {
                     pp.initClock();
                     pp.initInput(c);
                     if (c.irq_enable) {
-                        exti.enable();
+                        exti.enable(c.irq_trigger);
                         exti.setPriority(c.irq_priority);
                     }
                 }
@@ -175,6 +182,7 @@ pub fn Pin(comptime spec: []const u8) type {
     };
 }
 
+// exti interrupt enabling for pin
 fn Exti(comptime pp: anytype) type {
     const irqn = switch (pp.pin_number) {
         10...15 => .exti15_10,
@@ -182,14 +190,19 @@ fn Exti(comptime pp: anytype) type {
         else => @intToEnum(irq.Irq, pp.pin_number + 6),
     };
     return struct {
-        pub fn enable() void {
+        pub fn enable(trigger: IrqTrigger) void {
             regs.RCC.APB2ENR.modify(.{ .SYSCFGEN = 1 }); // Enable SYSCFG Clock
 
             // regs.SYSCFG.EXTICR[cr_reg_no].modify(.{ .EXTI[suffix] = [port_number] });
             const cr_reg = @field(regs.SYSCFG, "EXTICR" ++ pp.cr_suffix);
             setRegField(cr_reg, "EXTI" ++ pp.suffix, pp.port_number);
 
-            setRegField(regs.EXTI.FTSR, "TR" ++ pp.suffix, 1); // regs.EXTI.FTSR.modify(.{ .TR[suffix] = 1 });
+            if (trigger == .falling or .trigger == .both) {
+                setRegField(regs.EXTI.FTSR, "TR" ++ pp.suffix, 1); // regs.EXTI.FTSR.modify(.{ .TR[suffix] = 1 });
+            }
+            if (trigger == .rising or .trigger == .both) {
+                setRegField(regs.EXTI.RTSR, "TR" ++ pp.suffix, 1); // regs.EXTI.RTSR.modify(.{ .TR[suffix] = 1 });
+            }
             setRegField(regs.EXTI.IMR, "MR" ++ pp.suffix, 1); // regs.EXTI.IMR.modify(.{ .MR[suffix] = 1 });
 
             irq.enable(irqn);
