@@ -2,22 +2,22 @@ const std = @import("std");
 const regs = @import("registers.zig").registers;
 
 pub const Mode = enum(u2) {
-    input = 0b00,
-    output = 0b01,
-    alternate_function = 0b10,
-    analog = 0b11,
+    input,
+    output,
+    alternate_function,
+    analog,
 };
 
 pub const OutputType = enum(u1) {
-    push_pull = 0,
-    open_drain = 1,
+    push_pull,
+    open_drain,
 };
 
 pub const OutputSpeed = enum(u2) {
-    low = 0b00,
-    medium = 0b01,
-    fast = 0b10,
-    high = 0b11,
+    low,
+    medium,
+    fast,
+    high,
 };
 
 pub const Pull = enum(u2) {
@@ -26,32 +26,15 @@ pub const Pull = enum(u2) {
     down,
 };
 
-pub const AlternateFunction = enum(u4) {
-    af0,
-    af1,
-    af2,
-    af3,
-    af4,
-    af5,
-    af6,
-    af7,
-    af8,
-    af9,
-    af10,
-    af11,
-    af12,
-    af13,
-    af14,
-    af15,
+pub const Port = enum(u8) {
+    a,
+    b,
+    c,
+    d,
+    e,
+    h,
 };
 
-pub const Port = enum(u8) {
-    a = 'A',
-    b = 'B',
-    c = 'C',
-    d = 'D',
-    e = 'E',
-    h = 'H',
 };
 
 pub const Config = struct {
@@ -65,7 +48,7 @@ pub const Config = struct {
 
     fn parse(comptime c: Config) type {
         return struct {
-            const name = "GPIO" ++ [_]u8{@enumToInt(c.port)}; // GPIOx = GPIOA or GPIOB or ...
+            const name = "GPIO" ++ [_]u8{@enumToInt(c.port) + 65}; // GPIOx = GPIOA or GPIOB or ...
             const reg = @field(regs, name); // regs.GPIOx
             const pin = std.fmt.comptimePrint("{d}", .{c.pin}); // pin as string '0', '1', ...
         };
@@ -84,26 +67,32 @@ pub const Config = struct {
 
     fn init(comptime c: Config) void {
         c.initClock();
-        c.set("MODER", "MODER", @enumToInt(c.mode)); // regs.GPIOx.MODER.MODERy = z
-        c.set("PUPDR", "PUPDR", @enumToInt(c.pull)); // regs.GPIOx.PUPDR.PUPDRy = z
-        if (c.mode == .output) {
-            c.initOutput();
-        }
-        if (c.mode == .alternate_function) {
-            c.initAlternateFunction();
-        }
+        c.initMode();
+        c.initOutput();
+        c.initAlternateFunction();
     }
 
     fn initClock(comptime c: Config) void {
         setRegField(regs.RCC.AHB1ENR, c.parse().name ++ "EN", 1); // regs.RCC.AHB1ENR.GPIOxEN = 1
     }
 
+    fn initMode(comptime c: Config) void {
+        c.set("MODER", "MODER", @enumToInt(c.mode)); // regs.GPIOx.MODER.MODERy = z
+        c.set("PUPDR", "PUPDR", @enumToInt(c.pull)); // regs.GPIOx.PUPDR.PUPDRy = z
+    }
+
     fn initOutput(comptime c: Config) void {
+        if (c.mode != .output) {
+            return;
+        }
         c.set("OTYPER", "OT", @enumToInt(c.output_type)); // regs.GPIOx.OTYPER.OTy = z
         c.set("OSPEEDR", "OSPEEDR", @enumToInt(c.output_speed)); // regs.GPIOx.OSPEEDR.OSPEEDRy = z
     }
 
     fn initAlternateFunction(comptime c: Config) void {
+        if (c.mode != .alternate_function) {
+            return;
+        }
         if (c.alternate_function < 8) {
             c.set("AFRL", "AFRL", @enumToInt(c.alternate_function)); // regs.GPIOx.AFRL.AFRLy = z
         } else {
