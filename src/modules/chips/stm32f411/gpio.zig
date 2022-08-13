@@ -113,7 +113,7 @@ pub fn Pin(comptime spec: []const u8) type {
     const pp = ParsedPin(spec);
     return struct {
         pub fn Input(comptime c: InputConfig) type {
-            const exti = irq.Exti(pp);
+            const exti = Exti(pp);
             return struct {
                 pub fn init() void {
                     pp.initClock();
@@ -176,6 +176,47 @@ pub fn Pin(comptime spec: []const u8) type {
                     pp.initMode(.analog, .none);
                 }
             };
+        }
+    };
+}
+
+fn Exti(comptime pp: anytype) type {
+    const irqn = switch (pp.pin_number) {
+        10...15 => .exti15_10,
+        5...9 => .exti9_5,
+        else => @intToEnum(irq.Irq, pp.pin_number + 6),
+    };
+    return struct {
+        pub fn enable() void {
+            regs.RCC.APB2ENR.modify(.{ .SYSCFGEN = 1 }); // Enable SYSCFG Clock
+
+            // regs.SYSCFG.EXTICR[cr_reg_no].modify(.{ .EXTI[suffix] = [port_number] });
+            const cr_reg = @field(regs.SYSCFG, "EXTICR" ++ pp.cr_suffix);
+            setRegField(cr_reg, "EXTI" ++ pp.suffix, pp.port_number);
+
+            setRegField(regs.EXTI.FTSR, "TR" ++ pp.suffix, 1); // regs.EXTI.FTSR.modify(.{ .TR[suffix] = 1 });
+            setRegField(regs.EXTI.IMR, "MR" ++ pp.suffix, 1); // regs.EXTI.IMR.modify(.{ .MR[suffix] = 1 });
+
+            irq.enable(irqn);
+        }
+
+        // regs.NVIC.IPR[x].modify(.{ .IPR_N[y] = value });
+        pub fn setPriority(value: u8) void {
+            irq.setPriority(irqn, value);
+        }
+
+        // get and clear pending exti interrupt
+        // regs.EXTI.PR.read().PR[suffix]
+        pub fn pending() bool {
+            const field_name = "PR" ++ pp.suffix;
+            var reg_value = regs.EXTI.PR.read();
+            const is_pending = @field(reg_value, field_name) == 1;
+            if (is_pending) {
+                // clear pending bit
+                @field(reg_value, field_name) = 1;
+                regs.EXTI.PR.write(reg_value);
+            }
+            return is_pending;
         }
     };
 }
