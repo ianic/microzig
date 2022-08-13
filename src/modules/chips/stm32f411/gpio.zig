@@ -59,6 +59,7 @@ fn ParsedPin(comptime spec: []const u8) type {
         pub const reg = @field(regs, name); // regs.GPIOx
         pub const suffix = std.fmt.comptimePrint("{d}", .{pin_number}); // pin as string '0', '1', ...
         pub const cr_suffix = std.fmt.comptimePrint("{d}", .{pin_number / 4 + 1}); // 0-3 => '1', 4-7 => '2', ...
+
         // regs.GPIOx.[reg_name].[field]y = value
         fn set(
             comptime reg_name: []const u8,

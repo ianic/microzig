@@ -74,13 +74,6 @@ pub const Irq = enum(u8) {
     spi5               = 85,     // SPI5 global Interrupt
 };
 // zig fmt: on
-//
-
-fn setRegField(comptime reg: anytype, comptime field_name: anytype, value: anytype) void {
-    var temp = reg.read();
-    @field(temp, field_name) = value;
-    reg.write(temp);
-}
 
 // 0...31  => regs.NVIC.ISER0.modify(.{ .SETENA = bit }),
 // 32...63 => regs.NVIC.ISER1.modify(.{ .SETENA = bit }),
@@ -127,84 +120,62 @@ test "irq_bit" {
     try expectEqual(irq_bit(.adc), 0x40000);
 }
 
-pub const pending_irq = enum {
-    exti0,
-    exti1,
-    exti2,
-    exti3,
-    exti4,
-    exti5,
-    exti6,
-    exti7,
-    exti8,
-    exti9,
-    exti10,
-    exti11,
-    exti12,
-    exti13,
-    exti14,
-    exti15,
-    // TODO add other irqs
-};
+// pub const pending_irq = enum {
+//     exti0,
+//     exti1,
+//     exti2,
+//     exti3,
+//     exti4,
+//     exti5,
+//     exti6,
+//     exti7,
+//     exti8,
+//     exti9,
+//     exti10,
+//     exti11,
+//     exti12,
+//     exti13,
+//     exti14,
+//     exti15,
+//     // TODO add other irqs
+// };
 
-// check and clears pending bit for a given irq
-pub fn pending(comptime piq: pending_irq) bool {
-    const i = @enumToInt(piq);
-    // handle exti0 ... exti15
-    if (i >= @enumToInt(pending_irq.exti0) and i <= @enumToInt(pending_irq.exti15)) {
-        const suffix = i - @enumToInt(pending_irq.exti0);
-        const field_name = "PR" ++ std.fmt.comptimePrint("{d}", .{suffix});
-        // read PRx field of the EXTI.PR register
-        var reg_value = regs.EXTI.PR.read();
-        const is_pending = @field(reg_value, field_name) == 1;
-        if (is_pending) {
-            // clear pending bit
-            @field(reg_value, field_name) = 1;
-            regs.EXTI.PR.write(reg_value);
-        }
-        return is_pending;
-    }
-    // TODO pending
-    unreachable;
+// // check and clears pending bit for a given irq
+// pub fn pending(comptime piq: pending_irq) bool {
+//     const i = @enumToInt(piq);
+//     // handle exti0 ... exti15
+//     if (i >= @enumToInt(pending_irq.exti0) and i <= @enumToInt(pending_irq.exti15)) {
+//         const suffix = i - @enumToInt(pending_irq.exti0);
+//         const field_name = "PR" ++ std.fmt.comptimePrint("{d}", .{suffix});
+//         // read PRx field of the EXTI.PR register
+//         var reg_value = regs.EXTI.PR.read();
+//         const is_pending = @field(reg_value, field_name) == 1;
+//         if (is_pending) {
+//             // clear pending bit
+//             @field(reg_value, field_name) = 1;
+//             regs.EXTI.PR.write(reg_value);
+//         }
+//         return is_pending;
+//     }
+//     // TODO pending
+//     unreachable;
 
-    // // without comptime it will be something like this
-    // return switch (piq) {
-    //     .exti0 => {
-    //         const is_pending = regs.EXTI.PR.read().PR0 == 1;
-    //         if (is_pending) {
-    //             regs.EXTI.PR.modify(.{ .PR0 = 1 });
-    //         }
-    //         return is_pending;
-    //     },
-    //     // ....
-    //     else => unreachable,
-    // };
-}
+//     // // without comptime it will be something like this
+//     // return switch (piq) {
+//     //     .exti0 => {
+//     //         const is_pending = regs.EXTI.PR.read().PR0 == 1;
+//     //         if (is_pending) {
+//     //             regs.EXTI.PR.modify(.{ .PR0 = 1 });
+//     //         }
+//     //         return is_pending;
+//     //     },
+//     //     // ....
+//     //     else => unreachable,
+//     // };
+// }
 
-// NVIC->ISER[IRQn >> 5UL)] = (1UL << (IRQn & 0x1F));
+// // NVIC->ISER[IRQn >> 5UL)] = (1UL << (IRQn & 0x1F));
 
-// NVIC_ISER0 bits 0 to 31 are for interrupt 0 to 31, respectively
-// NVIC_ISER1 bits 0 to 31 are for interrupt 32 to 63, respectively
-// ...
-
-pub const ticks: u32 = 0;
-
-pub const interrupts = struct {
-    pub fn SysTick() void {
-        ticks += 1;
-        // TODO: call handler
-    }
-
-    pub fn EXTI0(comptime function: anytype) micro.chip.InterruptVector {
-        return .{
-            .C = struct {
-                fn wrapper() callconv(.C) void {
-                    if (regs.EXTI.PR.read().PR0 == 1) {
-                        regs.EXTI.PR.modify(.{ .PR0 = 1 });
-                        @call(.{ .modifier = .always_inline }, function, .{});
-                    }
-                }
-            }.wrapper,
-        };
-    }
-};
+// // NVIC_ISER0 bits 0 to 31 are for interrupt 0 to 31, respectively
+// // NVIC_ISER1 bits 0 to 31 are for interrupt 32 to 63, respectively
+// // ...
