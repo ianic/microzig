@@ -44,16 +44,10 @@ pub const AFConfig = struct {
     af: u4,
 };
 
+// spec is already asserted that it is valid port pin combination
 fn ParsedPin(comptime spec: []const u8) type {
-    const invalid_format_msg = "The given pin '" ++ spec ++ "' has an invalid format. Pins must follow the format \"P{Port}{Pin}\" scheme.";
-
-    if (spec[0] != 'P')
-        @compileError(invalid_format_msg);
-    if (spec[1] < 'A' or spec[1] > 'H')
-        @compileError(invalid_format_msg);
-
     return struct {
-        pub const pin_number: comptime_int = std.fmt.parseInt(u4, spec[2..], 10) catch @compileError(invalid_format_msg);
+        pub const pin_number: comptime_int = std.fmt.parseInt(u4, spec[2..], 10) catch unreachable;
         pub const port_number = @intCast(u4, spec[1..2][0] - 65); // A = 0, B = 1, ...
         pub const name = "GPIO" ++ spec[1..2]; // GPIOx = GPIOA or GPIOB or ...
         pub const reg = @field(regs, name); // regs.GPIOx

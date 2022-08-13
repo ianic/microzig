@@ -41,7 +41,6 @@ pub const clk = @import("clock.zig");
 pub const Frequencies = clk.Frequencies;
 //pub const hsi_100 = clk.hsi_100;
 //pub const hsi_96 = clk.hsi_96;
-pub const Pin = @import("gpio.zig").Pin;
 
 pub usingnamespace chip;
 
@@ -71,6 +70,29 @@ fn initFeatures() void {
     regs.FLASH.ACR.modify(.{ .DCEN = 1, .ICEN = 1, .PRFTEN = 1 }); // Enable flash data and instruction cache
     regs.SCB.AIRCR.modify(.{ .PRIGROUP = 0b011, .VECTKEYSTAT = 0x5FA }); // Set Interrupt Group Priority
     regs.FPU_CPACR.CPACR.modify(.{ .CP = 0b1111 }); // Enable FPU coprocessor
+}
+
+pub fn Pin(comptime spec: []const u8) type {
+    assertValidPin(spec);
+    return @import("gpio.zig").Pin(spec);
+}
+
+fn assertValidPin(comptime spec: []const u8) void {
+    if (spec[0] != 'P') @compileError("pin name should start with P");
+    if (!(spec.len == 3 or spec.len == 4)) @compileError("invalid pin name len");
+    const port = spec[1];
+    // A..E and H are valid
+    if (!((port >= 'A' and port <= 'E') or port == 'H'))
+        @compileError("invalid port name");
+    // only PH0 and PH1 are valid
+    if (port == 'H')
+        if (!(spec.len == 3 and (spec[2] == '0' or spec[2] == '1')))
+            @compileError("in port H only PH0 and PH1 pins are available");
+    // suffix is number 0..15
+    const wrap = struct {
+        const pn = std.fmt.parseInt(u4, spec[2..], 10) catch @compileError("pin must be number 0...15");
+    };
+    if (wrap.pn > 15) @compileError("pin number must be 0...15");
 }
 
 pub fn parsePin(comptime spec: []const u8) type {
@@ -702,15 +724,15 @@ test "counter with overflow" {
     var t = ticker();
     t.ticks = 0xFFFFFFFF;
 
-    var counter = t.every(2);
-    try std.testing.expect(!counter.ready());
+    var counter = t.interval(2);
+    try std.testing.expect(!counter.ready(2));
     t.inc();
-    try std.testing.expect(!counter.ready());
+    try std.testing.expect(!counter.ready(2));
     try std.testing.expectEqual(t.ticks, 0);
     try std.testing.expectEqual(counter.next, 1);
     try std.testing.expectEqual(counter.overflow, true);
     t.inc();
-    try std.testing.expect(counter.ready());
+    try std.testing.expect(counter.ready(2));
     try std.testing.expectEqual(counter.next, 3);
     try std.testing.expectEqual(counter.overflow, false);
 }
@@ -783,3 +805,18 @@ pub const Task = struct {
         }
     }
 };
+
+test "assertValidPin" {
+    assertValidPin("PA0");
+    assertValidPin("PA15");
+    assertValidPin("PB0");
+    assertValidPin("PB15");
+    assertValidPin("PC0");
+    assertValidPin("PC15");
+    assertValidPin("PD0");
+    assertValidPin("PD15");
+    assertValidPin("PE0");
+    assertValidPin("PE15");
+    assertValidPin("PH0");
+    assertValidPin("PH1");
+}
