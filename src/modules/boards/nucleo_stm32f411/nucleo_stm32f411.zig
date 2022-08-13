@@ -5,18 +5,16 @@ pub const regs = chip.registers;
 pub const irq = chip.irq;
 
 pub const Config = struct {
-    led_enabled: bool = true,
-    key_enabled: bool = true,
+    led_enable: bool = true,
+    button_enable: bool = true,
 };
 
 pub fn init(cfg: Config) void {
-    if (cfg.led_enabled) {
+    if (cfg.led_enable) {
         led.init();
-        //  TODO high speed opcija za gpio
-        //regs.GPIOA.OSPEEDR.modify(.{ .OSPEEDR5 = 0b10 });
     }
-    if (cfg.key_enabled) {
-        keyInit();
+    if (cfg.button_enable) {
+        button.init();
     }
 }
 
@@ -26,33 +24,7 @@ pub const pin_map = .{
 };
 
 pub const led = chip.Pin("PA5").Output(.{});
-
-fn keyInit() void {
-    regs.RCC.APB2ENR.modify(.{ .SYSCFGEN = 1 }); // Enable SYSCFG Clock
-    // init key as input
-    //micro.Gpio(micro.Pin(pin_map.button), .{ .mode = .input }).init();
-    // chip.gpioPin(.{
-    //     .port = .c,
-    //     .pin = 13,
-    //     .mode = .input,
-    // }).init();
-    //chip.gpioPin(.{ .port = .c, .pin = 13 }).input(.{}).init();
-
-    chip.Pin("PC13").Input(.{}).init();
-
-    // above micro is same as below regs two lines
-    // // PC13 enable input
-    // regs.RCC.AHB1ENR.modify(.{ .GPIOCEN = 1 });
-    //
-    // regs.GPIOC.MODER.modify(.{ .MODER13 = 0b00 });
-    // TODO napravi ovo opecenito i objasni zasto mora biti ovdje
-    regs.NVIC.IPR10.modify(.{ .IPR_N0 = 0xf0 }); // set interrupt priority
-
-    regs.SYSCFG.EXTICR4.modify(.{ .EXTI13 = 0b0010 }); // pc_13
-    regs.EXTI.FTSR.modify(.{ .TR13 = 1 });
-    regs.EXTI.IMR.modify(.{ .MR13 = 1 });
-    irq.enable(.exti15_10);
-}
+pub const button = chip.Pin("PC13").Input(.{ .irq_enable = true });
 
 // this board uses crystal oscilator from st-link part of the board for hse
 pub const hse_frequency = 8_000_000; // 8 MHz

@@ -74,12 +74,77 @@ pub const irq = enum(u8) {
     spi5               = 85,     // SPI5 global Interrupt
 };
 // zig fmt: on
+//
+
+pub fn Exti(comptime pp: anytype) type {
+    const irqn = switch (pp.pin_number) {
+        10...15 => .exti15_10,
+        5...9 => .exti9_5,
+        else => @intToEnum(irq, pp.pin_number + 6),
+    };
+    return struct {
+        pub fn enable() void {
+            regs.RCC.APB2ENR.modify(.{ .SYSCFGEN = 1 }); // Enable SYSCFG Clock
+
+            // regs.SYSCFG.EXTICR[cr_reg_no].modify(.{ .EXTI[suffix] = [port_number] });
+            const cr_reg = @field(regs.SYSCFG, "EXTICR" ++ pp.cr_suffix);
+            setRegField(cr_reg, "EXTI" ++ pp.suffix, pp.port_number);
+
+            setRegField(regs.EXTI.FTSR, "TR" ++ pp.suffix, 1); // regs.EXTI.FTSR.modify(.{ .TR[suffix] = 1 });
+            setRegField(regs.EXTI.IMR, "MR" ++ pp.suffix, 1); // regs.EXTI.IMR.modify(.{ .MR[suffix] = 1 });
+
+            self.enable(irqn);
+        }
+
+        // regs.NVIC.IPR[x].modify(.{ .IPR_N[y] = value });
+        pub fn setPriority(value: u8) void {
+            self.setPriority(irqn, value);
+        }
+
+        // get and clear pending exti interrupt
+        // regs.EXTI.PR.read().PR[suffix]
+        pub fn pending() bool {
+            const field_name = "PR" ++ pp.suffix;
+            var reg_value = regs.EXTI.PR.read();
+            const is_pending = @field(reg_value, field_name) == 1;
+            if (is_pending) {
+                // clear pending bit
+                @field(reg_value, field_name) = 1;
+                regs.EXTI.PR.write(reg_value);
+            }
+            return is_pending;
+        }
+    };
+}
+
+const self = @This();
+
+fn setRegField(comptime reg: anytype, comptime field_name: anytype, value: anytype) void {
+    var temp = reg.read();
+    @field(temp, field_name) = value;
+    reg.write(temp);
+}
 
 // 0...31  => regs.NVIC.ISER0.modify(.{ .SETENA = bit }),
 // 32...63 => regs.NVIC.ISER1.modify(.{ .SETENA = bit }),
 // ...
 pub fn enable(comptime irqn: irq) void {
     setBit(@ptrToInt(regs.NVIC.ISER0), irqn);
+}
+
+// 0...31  => regs.NVIC.ICER0.modify(.{ .CLRENA = bit }),
+// 32...63 => regs.NVIC.ICER1.modify(.{ .CLRENA = bit }),
+// ...
+pub fn disable(comptime irqn: irq) void {
+    setBit(@ptrToInt(regs.NVIC.ICER0), irqn);
+}
+
+// regs.NVIC.IPR[x].modify(.{ .IPR_N[y] = value });
+pub fn setPriority(comptime irqn: irq, value: u8) void {
+    const base_addr = @ptrToInt(regs.NVIC.IPR0); // start from addres of the first register IPR0
+    const addr = base_addr + 0x1 * @intCast(u32, @enumToInt(irqn)); // advance by byte for each irq
+    const reg = @intToPtr(*u8, addr); // get pointer to location
+    reg.* = value; // update value
 }
 
 // start from base_addr
@@ -91,13 +156,6 @@ fn setBit(base_addr: u32, irqn: irq) void {
     const addr = base_addr + 0x4 * reg_no; // switch to the address of the register no x
     const reg = @intToPtr(*u32, addr); // get pointer to register
     reg.* = irq_bit(irqn); // set bits in that word
-}
-
-// 0...31  => regs.NVIC.ICER0.modify(.{ .CLRENA = bit }),
-// 32...63 => regs.NVIC.ICER1.modify(.{ .CLRENA = bit }),
-// ...
-pub fn disable(comptime irqn: irq) void {
-    setBit(@ptrToInt(regs.NVIC.ICER0), irqn);
 }
 
 fn irq_bit(irqn: irq) u32 {
