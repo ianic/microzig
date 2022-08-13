@@ -43,6 +43,7 @@ pub const Frequencies = clk.Frequencies;
 //pub const hsi_96 = clk.hsi_96;
 
 pub const gpioPin = @import("gpio.zig").pin;
+pub const Pin = @import("gpio.zig").Pin;
 
 pub usingnamespace chip;
 

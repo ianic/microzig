@@ -25,17 +25,20 @@ pub const pin_map = .{
     .B1 = "PC13",
 };
 
-pub const led = chip.gpioPin(.{
-    .port = .a,
-    .pin = 5,
-    .mode = .output,
-});
+pub const led = chip.Pin("PA5").Output(.{});
 
 fn keyInit() void {
     regs.RCC.APB2ENR.modify(.{ .SYSCFGEN = 1 }); // Enable SYSCFG Clock
     // init key as input
     //micro.Gpio(micro.Pin(pin_map.button), .{ .mode = .input }).init();
-    chip.gpioPin(.{ .port = .c, .pin = 13, .mode = .input }).init();
+    // chip.gpioPin(.{
+    //     .port = .c,
+    //     .pin = 13,
+    //     .mode = .input,
+    // }).init();
+    //chip.gpioPin(.{ .port = .c, .pin = 13 }).input(.{}).init();
+
+    chip.Pin("PC13").Input(.{}).init();
 
     // above micro is same as below regs two lines
     // // PC13 enable input
