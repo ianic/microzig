@@ -56,20 +56,26 @@ pub const clock = struct {
 pub const Config = struct {
     clock: clk.Config = clk.hsi_100,
     systick_enabled: bool = true,
+    // 0b0xx => 16 group / 0 sub priorities, 0b100 => 8/2, 0b101 => 4/4, 0b110 => 2/8, 0b111 => 0/16
+    prigroup: u3 = 0b000,
 };
 
 pub fn init(comptime cfg: Config) void {
-    initFeatures();
+    initFeatures(cfg);
     clk.init(cfg.clock);
     if (cfg.systick_enabled) {
         clk.initSysTick(cfg.clock.frequencies.ahb, 1);
     }
 }
 
-fn initFeatures() void {
+fn initFeatures(comptime cfg: Config) void {
     regs.FLASH.ACR.modify(.{ .DCEN = 1, .ICEN = 1, .PRFTEN = 1 }); // Enable flash data and instruction cache
-    regs.SCB.AIRCR.modify(.{ .PRIGROUP = 0b011, .VECTKEYSTAT = 0x5FA }); // Set Interrupt Group Priority
     regs.FPU_CPACR.CPACR.modify(.{ .CP = 0b1111 }); // Enable FPU coprocessor
+
+    // Prigroup determines the split of group priority (preemption priority) from sub-priority.
+    // Refer to page 229 in PM0214 Rev 10 for possible values.
+    // On writes, write 0x5FA to VECTKEY, otherwise the write is ignored.
+    regs.SCB.AIRCR.modify(.{ .PRIGROUP = cfg.prigroup, .VECTKEYSTAT = 0x5FA });
 }
 
 pub fn Pin(comptime spec: []const u8) type {

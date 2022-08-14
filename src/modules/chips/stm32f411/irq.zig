@@ -89,11 +89,14 @@ pub fn disable(comptime irq: Irq) void {
     setSERBit(@ptrToInt(regs.NVIC.ICER0), irq);
 }
 
+// Cortex-M3/4/7 cores use only the four upper bits.
+// reg.SCB.AIRCR.PRIGOROUP defines split between preemption priority and sub-priority
 // regs.NVIC.IPR[x].modify(.{ .IPR_N[y] = value });
-pub fn setPriority(comptime irq: Irq, value: u8) void {
+pub fn setPriority(comptime irq: Irq, pri: u4) void {
     const base_addr = @ptrToInt(regs.NVIC.IPR0); // start from addres of the first register IPR0
     const addr = base_addr + 0x1 * @intCast(u32, @enumToInt(irq)); // advance by byte for each irq
     const reg = @intToPtr(*u8, addr); // get pointer to location
+    const value: u8 = @intCast(u8, pri) << 4; // shift pri to upper 4 bits, only those are used
     reg.* = value; // update value
 }
 

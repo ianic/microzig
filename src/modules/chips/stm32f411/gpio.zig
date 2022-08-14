@@ -30,7 +30,7 @@ pub const Pull = enum(u2) {
 pub const InputConfig = struct {
     pull: Pull = .none,
     irq_enable: bool = true,
-    irq_priority: u8 = 0xf0,
+    irq_priority: u4 = 0xf,
     irq_trigger: IrqTrigger = .falling,
 };
 
@@ -209,8 +209,8 @@ fn Exti(comptime pp: anytype) type {
         }
 
         // regs.NVIC.IPR[x].modify(.{ .IPR_N[y] = value });
-        pub fn setPriority(value: u8) void {
-            irq.setPriority(irqn, value);
+        pub fn setPriority(pri: u4) void {
+            irq.setPriority(irqn, pri);
         }
 
         // get and clear pending exti interrupt
