@@ -2,11 +2,28 @@ const std = @import("std");
 const regs = @import("registers.zig").registers;
 const irq = @import("irq.zig");
 
-pub const Mode = enum(u2) {
-    input,
-    output,
-    alternate_function,
-    analog,
+pub const InputConfig = struct {
+    pull: Pull = .none,
+    irq_enable: bool = true,
+    irq_priority: u4 = 0xf,
+    irq_trigger: IrqTrigger = .falling,
+};
+
+pub const OutputConfig = struct {
+    pull: Pull = .none,
+    speed: OutputSpeed = .low,
+    @"type": OutputType = .push_pull,
+};
+
+pub const AFConfig = struct {
+    pull: Pull = .none,
+    af: u4,
+};
+
+pub const Pull = enum(u2) {
+    none,
+    up,
+    down,
 };
 
 pub const OutputType = enum(u1) {
@@ -21,34 +38,17 @@ pub const OutputSpeed = enum(u2) {
     high,
 };
 
-pub const Pull = enum(u2) {
-    none,
-    up,
-    down,
-};
-
-pub const InputConfig = struct {
-    pull: Pull = .none,
-    irq_enable: bool = true,
-    irq_priority: u4 = 0xf,
-    irq_trigger: IrqTrigger = .falling,
-};
-
 pub const IrqTrigger = enum {
     falling,
     rising,
     both,
 };
 
-pub const OutputConfig = struct {
-    pull: Pull = .none,
-    speed: OutputSpeed = .low,
-    @"type": OutputType = .push_pull,
-};
-
-pub const AFConfig = struct {
-    pull: Pull = .none,
-    af: u4,
+const Mode = enum(u2) {
+    input,
+    output,
+    alternate_function,
+    analog,
 };
 
 // spec is already asserted that it is valid port pin combination
