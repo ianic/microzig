@@ -41,6 +41,7 @@ pub const clk = @import("clock.zig");
 pub const Frequencies = clk.Frequencies;
 //pub const hsi_100 = clk.hsi_100;
 //pub const hsi_96 = clk.hsi_96;
+pub const adc = @import("adc.zig");
 
 pub usingnamespace chip;
 
