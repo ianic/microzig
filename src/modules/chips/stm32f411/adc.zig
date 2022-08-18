@@ -1,66 +1,84 @@
 const std = @import("std");
 const regs = @import("registers.zig").registers;
 const Pin = @import("stm32f411.zig").Pin;
+const irq = @import("irq.zig");
 
 pub const Config = struct {
     irq_enable: bool = true, // enable rising adc interrupt on each conversion
-    //apb2_clock: u32, // for calculating prescaler
-    inputs: u32, // enabled inputs channels 0...18 bits
-    data: *[16]u16, // where results of conversion will be stored
-
+    apb2_clock: u32 = 0, // for calculating prescaler
+    inputs: []const Input, // adc input channels
+    data: [*]const u16, // where results of conversion will be stored
     // value for the ADC sample time register SMPRx
     // 000: 3 cycles 001: 15 cycles 010: 28 cycles 011: 56 cycles 100: 84 cycles 101: 112 cycles 110: 144 cycles 111: 480 cycles
-    sample_time: u3 = 0b111,
+    sample_time: u3 = 0b101,
 };
 
-pub fn init(comptime cfg: Config) void {
-    if (cfg.inputs == 0) {
-        @compileError("no inputs defined");
-    }
-    const data_items = adc_init(cfg);
-    dma_init(data_items, @ptrToInt(cfg.data));
+pub fn init(cfg: Config) void {
+    adc_init(cfg);
+    dma_init(@intCast(u16, cfg.inputs.len), @ptrToInt(cfg.data));
 }
 
-fn adc_init(cfg: Config) u16 {
+fn adc_init(cfg: Config) void {
     regs.RCC.APB2ENR.modify(.{ .ADC1EN = 1 }); // enable clock for adc1
-
-    regs.ADC_Common.CCR.modify(.{ .TSVREFE = 1 }); // wake up temperature sensor from power down
 
     regs.ADC1.CR2.modify(.{ .ADON = 0 }); // disable ADC
     regs.ADC1.CR2.modify(.{ .CONT = 1 }); // continous mode, 0 for one conversion only
     regs.ADC1.CR2.modify(.{ .DMA = 1, .DDS = 1 }); // DMA mode enabled
     regs.ADC1.CR2.modify(.{ .EOCS = 1 }); // The EOC bit is set at the end of each regular conversion.
 
-    const sequence_len = initInputs(cfg.inputs, cfg.sample_time);
-
-    // regs.ADC1.SQR3.modify(.{ .SQ1 = 18, .SQ2 = 17 }); // select ADC input channel
-    // regs.ADC1.SMPR1.modify(.{ .SMP18 = 0b111, .SMP17 = 0b111 }); // 480 cycles for this channels (default 3)
-    // const sequence_len = 1;
+    initInputs(cfg.inputs, cfg.sample_time);
+    const sequence_len = @intCast(u4, cfg.inputs.len - 1);
 
     regs.ADC1.SQR1.modify(.{ .L = sequence_len }); // sequnce 0 = 1 conversions ... 15 = 16 conversions
     regs.ADC1.CR1.modify(.{ .SCAN = 1 }); // scan mode must be set, if you are using more than 1 channel for the ADC
     regs.ADC1.CR1.modify(.{ .RES = 0b000 }); // resolution of the conversion, 12-bit (15 ADCCLK cycles), 0 to 4095
 
-    // TODO calc prescaler based on input frequency
-    // ADCCLK = APB2 / prescaler, max 18 MHz
+    // ADCCLK = APB2 / prescaler
     // This clock is generated from the APB2 clock divided by a programmable prescaler
-    // that allows the ADC to work at fPCLK2/2, /4, /6 or /8. Max clock is 18 MHz
-    regs.ADC_Common.CCR.modify(.{ .ADCPRE = 0b11 }); // prescaler to divide clock by 8
+    // that allows the ADC to work at fPCLK2/2, /4, /6 or /8.
+    // Max clock is 36/18 MHz (high/low voltage)
+    regs.ADC_Common.CCR.modify(.{ .ADCPRE = calcPrescaler(cfg.apb2_clock) }); // prescaler to divide apb2 clock
 
     if (cfg.irq_enable) {
         regs.ADC1.CR1.modify(.{ .EOCIE = 1 }); // enable interrupt
-        // enable IRQ ADC_IRQn = 18
-        // TODO za ovo bi mogao iskoristiti irq
-        regs.NVIC.ISER0.modify(.{ .SETENA = 0x4_0000 });
+        irq.enable(.adc);
     }
 
     regs.ADC1.SR.modify(.{ .EOC = 0, .OVR = 0, .STRT = 0 }); // clear status register
     regs.ADC1.CR2.modify(.{ .ADON = 1 }); // enable ADC
     regs.ADC1.CR2.modify(.{ .SWSTART = 1 }); // start the ADC conversion
-
-    return @intCast(u16, sequence_len) + 1;
 }
 
+// values from DocID026289 Rev 7 page 113
+const max_adc_clock = 36_000_000; // VDDA = 2.4 to 3.6 V
+//const max_adc_clock = 18_000_000; // VDDA = 1.7(1) to 2.4 V
+
+fn calcPrescaler(apb2_clock: u32) u2 {
+    if (apb2_clock == 0) {
+        return 0b11;
+    }
+    if (apb2_clock / 2 <= max_adc_clock) {
+        return 0b00;
+    }
+    if (apb2_clock / 4 <= max_adc_clock) {
+        return 0b01;
+    }
+    if (apb2_clock / 6 <= max_adc_clock) {
+        return 0b10;
+    }
+    return 0b11;
+}
+
+fn initInputs(inputs: []const Input, sample_time: u3) void {
+    for (inputs) |input, idx| {
+        input.enable();
+        input.setSequence(idx);
+        input.setSampleTime(sample_time);
+    }
+}
+
+// transfer adc values from data register regs.ADC1.DR to the destintaion array of values
+// array must have enough space for all input values (max 16)
 fn dma_init(data_items: u16, destination: usize) void {
     regs.RCC.AHB1ENR.modify(.{ .DMA2EN = 1 }); // enable clock for dma2
 
@@ -80,165 +98,176 @@ fn dma_init(data_items: u16, destination: usize) void {
     regs.DMA2.S0CR.modify(.{ .EN = 1 }); // enable DMA
 }
 
-test "inputs enabling" {
-    const inputs = IN0 | PA6 | IN14;
-    var channel: u8 = 0;
-    var position: u8 = 0;
-    while (channel <= 18) : (channel += 1) {
-        const channel_mask = @intCast(u32, 1) << @intCast(u5, channel);
-        if (inputs & channel_mask == channel_mask) {
-            std.debug.print("{d} {d} is set\n", .{ channel, position });
-            position += 1;
+pub const Input = enum(u5) {
+    pa0 = 0, // channel 0
+    pa1 = 1, // channel 1
+    pa2 = 2, // channel 2
+    pa3 = 3, // channel 3
+    pa4 = 4, // channel 4
+    pa5 = 5, // channel 5
+    pa6 = 6, // channel 6
+    pa7 = 7, // channel 7
+    pb0 = 8, // channel 8
+    pb1 = 9, // channel 9
+    pc0 = 10, // channel 10
+    pc1 = 11, // channel 11
+    pc2 = 12, // channel 12
+    pc3 = 13, // channel 13
+    pc4 = 14, // channel 14
+    pc5 = 15, // channel 15
+    // 16
+    vref = 17, // channel 17 internal reference voltage VREFINT
+    temp = 18, // channel 18 internal temperature sensor
+    vbat = 0b11111, // channel 18 battery voltage
+    //
+    // The VBAT and temperature sensor are connected to the same ADC internal
+    // channel (ADC1_IN18). Only one conversion, either temperature sensor or VBAT,
+    // must be selected at a time. When both conversion are enabled simultaneously,
+    // only the VBAT conversion is performed.
+
+    fn channel(self: Input) u5 {
+        if (self == Input.vbat) {
+            return 18;
+        }
+        return @enumToInt(self);
+    }
+
+    fn enable(self: Input) void {
+        switch (self) {
+            .pa0 => Pin("PA0").Analog().init(),
+            .pa1 => Pin("PA1").Analog().init(),
+            .pa2 => Pin("PA2").Analog().init(),
+            .pa3 => Pin("PA3").Analog().init(),
+            .pa4 => Pin("PA4").Analog().init(),
+            .pa5 => Pin("PA5").Analog().init(),
+            .pa6 => Pin("PA6").Analog().init(),
+            .pa7 => Pin("PA7").Analog().init(),
+            .pb0 => Pin("PB0").Analog().init(),
+            .pb1 => Pin("PB1").Analog().init(),
+            .pc0 => Pin("PC0").Analog().init(),
+            .pc1 => Pin("PC1").Analog().init(),
+            .pc2 => Pin("PC2").Analog().init(),
+            .pc3 => Pin("PC3").Analog().init(),
+            .pc4 => Pin("PC4").Analog().init(),
+            .pc5 => Pin("PC5").Analog().init(),
+            .vref => {},
+            .temp => {
+                regs.ADC_Common.CCR.modify(.{ .TSVREFE = 1 }); // wake up temperature sensor from power down
+                ts.init(); // read calibration values used in calculation
+            },
+            .vbat => {},
         }
     }
-}
 
-fn initInputs(inputs: u32, smp: u3) u4 {
-    var channel: u5 = 0;
-    var position: u4 = 0;
-    while (channel <= 18) : (channel += 1) {
-        const channel_mask = @intCast(u32, 1) << @intCast(u5, channel);
-        if (inputs & channel_mask == channel_mask) { // if channel x is enbled
-            setSequence(channel, position);
-            setSampleTime(channel, smp);
-            if (channel < 16) {
-                setInputPin(channel);
-            }
-            if (position == 15) {
-                break;
-            }
-            position += 1;
+    fn setSampleTime(self: Input, sample_time: u3) void {
+        switch (self.channel()) {
+            0 => regs.ADC1.SMPR2.modify(.{ .SMP0 = sample_time }),
+            1 => regs.ADC1.SMPR2.modify(.{ .SMP1 = sample_time }),
+            2 => regs.ADC1.SMPR2.modify(.{ .SMP2 = sample_time }),
+            3 => regs.ADC1.SMPR2.modify(.{ .SMP3 = sample_time }),
+            4 => regs.ADC1.SMPR2.modify(.{ .SMP4 = sample_time }),
+            5 => regs.ADC1.SMPR2.modify(.{ .SMP5 = sample_time }),
+            6 => regs.ADC1.SMPR2.modify(.{ .SMP6 = sample_time }),
+            7 => regs.ADC1.SMPR2.modify(.{ .SMP7 = sample_time }),
+            8 => regs.ADC1.SMPR2.modify(.{ .SMP8 = sample_time }),
+            9 => regs.ADC1.SMPR2.modify(.{ .SMP9 = sample_time }),
+
+            10 => regs.ADC1.SMPR1.modify(.{ .SMP10 = sample_time }),
+            11 => regs.ADC1.SMPR1.modify(.{ .SMP11 = sample_time }),
+            12 => regs.ADC1.SMPR1.modify(.{ .SMP12 = sample_time }),
+            13 => regs.ADC1.SMPR1.modify(.{ .SMP13 = sample_time }),
+            14 => regs.ADC1.SMPR1.modify(.{ .SMP14 = sample_time }),
+            15 => regs.ADC1.SMPR1.modify(.{ .SMP15 = sample_time }),
+            16 => regs.ADC1.SMPR1.modify(.{ .SMP16 = sample_time }),
+            17 => regs.ADC1.SMPR1.modify(.{ .SMP17 = sample_time }),
+            18 => regs.ADC1.SMPR1.modify(.{ .SMP18 = sample_time }),
+            else => return,
         }
     }
-    return position - 1;
-}
 
-fn setSequence(channel: u5, position: u8) void {
-    switch (position) {
-        0 => regs.ADC1.SQR3.modify(.{ .SQ1 = channel }),
-        1 => regs.ADC1.SQR3.modify(.{ .SQ2 = channel }),
-        2 => regs.ADC1.SQR3.modify(.{ .SQ3 = channel }),
-        3 => regs.ADC1.SQR3.modify(.{ .SQ4 = channel }),
-        4 => regs.ADC1.SQR3.modify(.{ .SQ5 = channel }),
-        5 => regs.ADC1.SQR3.modify(.{ .SQ6 = channel }),
+    fn setSequence(self: Input, idx: usize) void {
+        const ch: u5 = self.channel();
+        switch (idx) {
+            0 => regs.ADC1.SQR3.modify(.{ .SQ1 = ch }),
+            1 => regs.ADC1.SQR3.modify(.{ .SQ2 = ch }),
+            2 => regs.ADC1.SQR3.modify(.{ .SQ3 = ch }),
+            3 => regs.ADC1.SQR3.modify(.{ .SQ4 = ch }),
+            4 => regs.ADC1.SQR3.modify(.{ .SQ5 = ch }),
+            5 => regs.ADC1.SQR3.modify(.{ .SQ6 = ch }),
 
-        6 => regs.ADC1.SQR2.modify(.{ .SQ7 = channel }),
-        7 => regs.ADC1.SQR2.modify(.{ .SQ8 = channel }),
-        8 => regs.ADC1.SQR2.modify(.{ .SQ9 = channel }),
-        9 => regs.ADC1.SQR2.modify(.{ .SQ10 = channel }),
-        10 => regs.ADC1.SQR2.modify(.{ .SQ11 = channel }),
-        11 => regs.ADC1.SQR2.modify(.{ .SQ12 = channel }),
+            6 => regs.ADC1.SQR2.modify(.{ .SQ7 = ch }),
+            7 => regs.ADC1.SQR2.modify(.{ .SQ8 = ch }),
+            8 => regs.ADC1.SQR2.modify(.{ .SQ9 = ch }),
+            9 => regs.ADC1.SQR2.modify(.{ .SQ10 = ch }),
+            10 => regs.ADC1.SQR2.modify(.{ .SQ11 = ch }),
+            11 => regs.ADC1.SQR2.modify(.{ .SQ12 = ch }),
 
-        12 => regs.ADC1.SQR1.modify(.{ .SQ13 = channel }),
-        13 => regs.ADC1.SQR1.modify(.{ .SQ14 = channel }),
-        14 => regs.ADC1.SQR1.modify(.{ .SQ15 = channel }),
-        15 => regs.ADC1.SQR1.modify(.{ .SQ16 = channel }),
-        else => unreachable, //@compileError("only 16 positions available"),
+            12 => regs.ADC1.SQR1.modify(.{ .SQ13 = ch }),
+            13 => regs.ADC1.SQR1.modify(.{ .SQ14 = ch }),
+            14 => regs.ADC1.SQR1.modify(.{ .SQ15 = ch }),
+            15 => regs.ADC1.SQR1.modify(.{ .SQ16 = ch }),
+            else => return,
+        }
     }
-}
-
-fn setSampleTime(channel: u5, smp: u3) void {
-    switch (channel) {
-        0 => regs.ADC1.SMPR2.modify(.{ .SMP0 = smp }),
-        1 => regs.ADC1.SMPR2.modify(.{ .SMP1 = smp }),
-        2 => regs.ADC1.SMPR2.modify(.{ .SMP2 = smp }),
-        3 => regs.ADC1.SMPR2.modify(.{ .SMP3 = smp }),
-        4 => regs.ADC1.SMPR2.modify(.{ .SMP4 = smp }),
-        5 => regs.ADC1.SMPR2.modify(.{ .SMP5 = smp }),
-        6 => regs.ADC1.SMPR2.modify(.{ .SMP6 = smp }),
-        7 => regs.ADC1.SMPR2.modify(.{ .SMP7 = smp }),
-        8 => regs.ADC1.SMPR2.modify(.{ .SMP8 = smp }),
-        9 => regs.ADC1.SMPR2.modify(.{ .SMP9 = smp }),
-
-        10 => regs.ADC1.SMPR1.modify(.{ .SMP10 = smp }),
-        11 => regs.ADC1.SMPR1.modify(.{ .SMP11 = smp }),
-        12 => regs.ADC1.SMPR1.modify(.{ .SMP12 = smp }),
-        13 => regs.ADC1.SMPR1.modify(.{ .SMP13 = smp }),
-        14 => regs.ADC1.SMPR1.modify(.{ .SMP14 = smp }),
-        15 => regs.ADC1.SMPR1.modify(.{ .SMP15 = smp }),
-        16 => regs.ADC1.SMPR1.modify(.{ .SMP16 = smp }),
-        17 => regs.ADC1.SMPR1.modify(.{ .SMP17 = smp }),
-        18 => regs.ADC1.SMPR1.modify(.{ .SMP18 = smp }),
-        else => unreachable, //@compileError("unknown channel"),
-    }
-}
-
-fn setInputPin(channel: u5) void {
-    _ = switch (channel) {
-        0 => Pin("PA0").Analog(),
-        1 => Pin("PA1").Analog(),
-        2 => Pin("PA2").Analog(),
-        3 => Pin("PA3").Analog(),
-        4 => Pin("PA4").Analog(),
-        5 => Pin("PA5").Analog(),
-        6 => Pin("PA6").Analog(),
-        7 => Pin("PA7").Analog(),
-        8 => Pin("PB0").Analog(),
-        9 => Pin("PB1").Analog(),
-        10 => Pin("PC0").Analog(),
-        11 => Pin("PC1").Analog(),
-        12 => Pin("PC2").Analog(),
-        13 => Pin("PC3").Analog(),
-        14 => Pin("PC4").Analog(),
-        15 => Pin("PC5").Analog(),
-        else => unreachable, //@compileError("unknow pin"),
-    };
-}
-
-pub const IN0 = 1 << 0; // PA0
-pub const IN1 = 1 << 1; // PA1
-pub const IN2 = 1 << 2; // PA2
-pub const IN3 = 1 << 3; // PA3
-pub const IN4 = 1 << 4; // PA4
-pub const IN5 = 1 << 5; // PA5
-pub const IN6 = 1 << 6; // PA6
-pub const IN7 = 1 << 7; // PA7
-pub const IN8 = 1 << 8; // PB0
-pub const IN9 = 1 << 9; // PB1
-pub const IN10 = 1 << 10; // PC0
-pub const IN11 = 1 << 11; // PC1
-pub const IN12 = 1 << 12; // PC2
-pub const IN13 = 1 << 13; // PC3
-pub const IN14 = 1 << 14; // PC4
-pub const IN15 = 1 << 15; // PC5
-pub const PA0 = 1 << 0; // IN0
-pub const PA1 = 1 << 1; // IN1
-pub const PA2 = 1 << 2; // IN2
-pub const PA3 = 1 << 3; // IN3
-pub const PA4 = 1 << 4; // IN4
-pub const PA5 = 1 << 5; // IN5
-pub const PA6 = 1 << 6; // IN6
-pub const PA7 = 1 << 7; // IN7
-pub const PB0 = 1 << 8; // IN8
-pub const PB1 = 1 << 9; // IN9
-pub const PC0 = 1 << 10; // IN10
-pub const PC1 = 1 << 11; // IN11
-pub const PC2 = 1 << 12; // IN12
-pub const PC3 = 1 << 13; // IN13
-pub const PC4 = 1 << 14; // IN14
-pub const PC5 = 1 << 15; // IN15
-// 16?
-pub const VREF = 1 << 17; //  channel 17 internal reference voltage VREFINT
-pub const TEMP = 1 << 18; // channel 18 internal temperature sensor
-pub const VBAT = 1 << 18; // channel 18 battery voltage
-// The VBAT and temperature sensor are connected to the same ADC internal
-// channel (ADC1_IN18). Only one conversion, either temperature sensor or VBAT,
-// must be selected at a time. When both conversion are enabled simultaneously,
-// only the VBAT conversion is performed.
-
-const Input = enum {
-    in1,
-    in2,
-    in3,
 };
 
-test "enum array" {
-    const inputs = [_]Input{ .in1, .in3 };
-    printInputs(inputs[0..]);
+// use temperature sensor calibration values
+// to convert temprature value to celsius
+pub fn tempValueToC(x: u16) f32 {
+    return ts.slope * @intToFloat(f32, x) + ts.intercept;
 }
 
-fn printInputs(inputs: []const Input) void {
-    for (inputs) |i| {
-        std.debug.print("{}\n", .{i});
+// use temperatur sensor characteristics
+fn f2(x: u16) f32 {
+    const v_sense = @intToFloat(f32, x) / 0xfff * 3300; // in mV
+    return (v_sense - ts_char.v25) / ts_char.avg_slope + 25;
+}
+
+const ts_char = struct {
+    const avg_slope: f32 = 2.500; // mV/°C
+    const v25: f32 = 760; // mV voltage at 25°C
+};
+
+// temperature sensor calibration values
+const ts = struct {
+    var slope: f32 = 0;
+    var intercept: f32 = 0;
+
+    const self = @This();
+
+    fn init() void {
+        self.slope = @intToFloat(f32, 110 - 30) / @intToFloat(f32, self.cal2() - self.cal1());
+        self.intercept = 110 - self.slope * @intToFloat(f32, self.cal2());
+    }
+
+    fn cal1() u16 {
+        const ptr = @intToPtr(*u16, 0x1FFF7A2C); //TS ADC raw data acquired at temperature of 30 °C, VDDA= 3.3
+        return ptr.*;
+    }
+
+    fn cal2() u16 {
+        const ptr = @intToPtr(*u16, 0x1FFF7A2E); //TS ADC raw data acquired at temperature of 110 °C, VDDA= 3.3 V
+        return ptr.*;
+    }
+};
+
+test "pero" {
+    var data: [16]u16 = .{0xaaaa} ** 16;
+
+    initTest(.{
+        .irq_enable = true,
+        .data = &data,
+        .inputs = &.{ .temp, .vref, .pa0, .pa1, .pc4 },
+    });
+}
+
+fn initTest(cfg: Config) void {
+    testInputs(cfg.inputs, cfg.sample_time);
+}
+
+fn testInputs(inputs: []const Input, smp: u3) void {
+    for (inputs) |input, idx| {
+        const channel: u5 = @enumToInt(input);
+        std.debug.print("{} {d} {d} 0b{b}\n", .{ input, idx, channel, smp });
     }
 }
