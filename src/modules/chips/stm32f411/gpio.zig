@@ -54,12 +54,12 @@ const Mode = enum(u2) {
 // spec is already asserted that it is valid port pin combination
 fn ParsedPin(comptime spec: []const u8) type {
     return struct {
-        pub const pin_number: comptime_int = std.fmt.parseInt(u4, spec[2..], 10) catch unreachable;
-        pub const port_number = @intCast(u4, spec[1..2][0] - 65); // A = 0, B = 1, ...
-        pub const name = "GPIO" ++ spec[1..2]; // GPIOx = GPIOA or GPIOB or ...
-        pub const reg = @field(regs, name); // regs.GPIOx
-        pub const suffix = std.fmt.comptimePrint("{d}", .{pin_number}); // pin as string '0', '1', ...
-        pub const cr_suffix = std.fmt.comptimePrint("{d}", .{pin_number / 4 + 1}); // 0-3 => '1', 4-7 => '2', ...
+        const pin_number: comptime_int = std.fmt.parseInt(u4, spec[2..], 10) catch unreachable;
+        const port_number = @intCast(u4, spec[1..2][0] - 65); // A = 0, B = 1, ...
+        const name = "GPIO" ++ spec[1..2]; // GPIOx = GPIOA or GPIOB or ...
+        const reg = @field(regs, name); // regs.GPIOx
+        const suffix = std.fmt.comptimePrint("{d}", .{pin_number}); // pin as string '0', '1', ...
+        const cr_suffix = std.fmt.comptimePrint("{d}", .{pin_number / 4 + 1}); // 0-3 => '1', 4-7 => '2', ...
 
         // regs.GPIOx.[reg_name].[field]y = value
         fn set(
@@ -244,3 +244,87 @@ test "irq params" {
     try std.testing.expectEqual(2, pp2.pin_number / 4 + 1);
     try std.testing.expectEqual(0b111, pp2.port_number);
 }
+
+pub const PA0 = Pin("PA0");
+pub const PA1 = Pin("PA1");
+pub const PA2 = Pin("PA2");
+pub const PA3 = Pin("PA3");
+pub const PA4 = Pin("PA4");
+pub const PA5 = Pin("PA5");
+pub const PA6 = Pin("PA6");
+pub const PA7 = Pin("PA7");
+pub const PA8 = Pin("PA8");
+pub const PA9 = Pin("PA9");
+pub const PA10 = Pin("PA10");
+pub const PA11 = Pin("PA11");
+pub const PA12 = Pin("PA12");
+pub const PA13 = Pin("PA13");
+pub const PA14 = Pin("PA14");
+pub const PA15 = Pin("PA15");
+pub const PB0 = Pin("PB0");
+pub const PB1 = Pin("PB1");
+pub const PB2 = Pin("PB2");
+pub const PB3 = Pin("PB3");
+pub const PB4 = Pin("PB4");
+pub const PB5 = Pin("PB5");
+pub const PB6 = Pin("PB6");
+pub const PB7 = Pin("PB7");
+pub const PB8 = Pin("PB8");
+pub const PB9 = Pin("PB9");
+pub const PB10 = Pin("PB10");
+pub const PB11 = Pin("PB11");
+pub const PB12 = Pin("PB12");
+pub const PB13 = Pin("PB13");
+pub const PB14 = Pin("PB14");
+pub const PB15 = Pin("PB15");
+pub const PC0 = Pin("PC0");
+pub const PC1 = Pin("PC1");
+pub const PC2 = Pin("PC2");
+pub const PC3 = Pin("PC3");
+pub const PC4 = Pin("PC4");
+pub const PC5 = Pin("PC5");
+pub const PC6 = Pin("PC6");
+pub const PC7 = Pin("PC7");
+pub const PC8 = Pin("PC8");
+pub const PC9 = Pin("PC9");
+pub const PC10 = Pin("PC10");
+pub const PC11 = Pin("PC11");
+pub const PC12 = Pin("PC12");
+pub const PC13 = Pin("PC13");
+pub const PC14 = Pin("PC14");
+pub const PC15 = Pin("PC15");
+pub const PD0 = Pin("PD0");
+pub const PD1 = Pin("PD1");
+pub const PD2 = Pin("PD2");
+pub const PD3 = Pin("PD3");
+pub const PD4 = Pin("PD4");
+pub const PD5 = Pin("PD5");
+pub const PD6 = Pin("PD6");
+pub const PD7 = Pin("PD7");
+pub const PD8 = Pin("PD8");
+pub const PD9 = Pin("PD9");
+pub const PD10 = Pin("PD10");
+pub const PD11 = Pin("PD11");
+pub const PD12 = Pin("PD12");
+pub const PD13 = Pin("PD13");
+pub const PD14 = Pin("PD14");
+pub const PD15 = Pin("PD15");
+pub const PE0 = Pin("PE0");
+pub const PE1 = Pin("PE1");
+pub const PE2 = Pin("PE2");
+pub const PE3 = Pin("PE3");
+pub const PE4 = Pin("PE4");
+pub const PE5 = Pin("PE5");
+pub const PE6 = Pin("PE6");
+pub const PE7 = Pin("PE7");
+pub const PE8 = Pin("PE8");
+pub const PE9 = Pin("PE9");
+pub const PE10 = Pin("PE10");
+pub const PE11 = Pin("PE11");
+pub const PE12 = Pin("PE12");
+pub const PE13 = Pin("PE13");
+pub const PE14 = Pin("PE14");
+pub const PE15 = Pin("PE15");
+pub const PH0 = Pin("PH0");
+pub const PH1 = Pin("PH1");
+pub const PH2 = Pin("PH2");

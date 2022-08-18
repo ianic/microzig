@@ -1,6 +1,7 @@
 const std = @import("std");
 const regs = @import("registers.zig").registers;
 const Pin = @import("stm32f411.zig").Pin;
+const gpio = @import("gpio.zig");
 const irq = @import("irq.zig");
 
 pub const Config = struct {
@@ -134,22 +135,22 @@ pub const Input = enum(u5) {
 
     fn enable(self: Input) void {
         switch (self) {
-            .pa0 => Pin("PA0").Analog().init(),
-            .pa1 => Pin("PA1").Analog().init(),
-            .pa2 => Pin("PA2").Analog().init(),
-            .pa3 => Pin("PA3").Analog().init(),
-            .pa4 => Pin("PA4").Analog().init(),
-            .pa5 => Pin("PA5").Analog().init(),
-            .pa6 => Pin("PA6").Analog().init(),
-            .pa7 => Pin("PA7").Analog().init(),
-            .pb0 => Pin("PB0").Analog().init(),
-            .pb1 => Pin("PB1").Analog().init(),
-            .pc0 => Pin("PC0").Analog().init(),
-            .pc1 => Pin("PC1").Analog().init(),
-            .pc2 => Pin("PC2").Analog().init(),
-            .pc3 => Pin("PC3").Analog().init(),
-            .pc4 => Pin("PC4").Analog().init(),
-            .pc5 => Pin("PC5").Analog().init(),
+            .pa0 => gpio.PA0.Analog().init(),
+            .pa1 => gpio.PA1.Analog().init(),
+            .pa2 => gpio.PA2.Analog().init(),
+            .pa3 => gpio.PA3.Analog().init(),
+            .pa4 => gpio.PA4.Analog().init(),
+            .pa5 => gpio.PA5.Analog().init(),
+            .pa6 => gpio.PA6.Analog().init(),
+            .pa7 => gpio.PA7.Analog().init(),
+            .pb0 => gpio.PB0.Analog().init(),
+            .pb1 => gpio.PB1.Analog().init(),
+            .pc0 => gpio.PC0.Analog().init(),
+            .pc1 => gpio.PC1.Analog().init(),
+            .pc2 => gpio.PC2.Analog().init(),
+            .pc3 => gpio.PC3.Analog().init(),
+            .pc4 => gpio.PC4.Analog().init(),
+            .pc5 => gpio.PC5.Analog().init(),
             .vref => {},
             .temp => {
                 regs.ADC_Common.CCR.modify(.{ .TSVREFE = 1 }); // wake up temperature sensor from power down
