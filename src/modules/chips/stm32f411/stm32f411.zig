@@ -70,8 +70,8 @@ pub fn init(comptime cfg: Config) void {
 }
 
 fn initFeatures(comptime cfg: Config) void {
-    regs.FLASH.ACR.modify(.{ .DCEN = 1, .ICEN = 1, .PRFTEN = 1 }); // Enable flash data and instruction cache
     regs.FPU_CPACR.CPACR.modify(.{ .CP = 0b1111 }); // Enable FPU coprocessor
+    regs.FLASH.ACR.modify(.{ .DCEN = 1, .ICEN = 1, .PRFTEN = 1 }); // Enable flash data and instruction cache
 
     // Prigroup determines the split of group priority (preemption priority) from sub-priority.
     // Refer to page 229 in PM0214 Rev 10 for possible values.
@@ -715,8 +715,8 @@ pub const TickerInterval = struct {
         return false;
     }
 
-    fn set(self: *Self, current: u32, count: u32) void {
-        self.overflow = @addWithOverflow(u32, current, count, &self.next);
+    fn set(self: *Self, current: u32, delay: u32) void {
+        self.overflow = @addWithOverflow(u32, current, delay, &self.next);
     }
 };
 

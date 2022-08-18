@@ -51,6 +51,17 @@ pub const cortex_m4 = Cpu{
     },
 };
 
+pub const cortex_m4_fpu = Cpu{
+    .name = "ARM Cortex-M4 with FPU",
+    .path = root_path ++ "cpus/cortex-m/cortex-m.zig",
+    .target = std.zig.CrossTarget{
+        .cpu_arch = .thumb,
+        .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m4 },
+        .os_tag = .freestanding,
+        .abi = .eabihf, // ref: https://rbino.com/posts/zig-stm32-blink/
+    },
+};
+
 pub const riscv32_imac = Cpu{
     .name = "RISC-V 32-bit",
     .path = root_path ++ "cpus/rv32-imac/riscv32.zig",

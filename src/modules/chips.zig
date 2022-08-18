@@ -107,7 +107,7 @@ pub const nrf52832 = Chip{
 pub const stm32f411ce = Chip{
     .name = "STM32F411CE",
     .path = root_path ++ "chips/stm32f411/stm32f411.zig",
-    .cpu = cpus.cortex_m4,
+    .cpu = cpus.cortex_m4_fpu,
     .memory_regions = &.{
         MemoryRegion{ .offset = 0x08000000, .length = 512 * 1024, .kind = .flash },
         MemoryRegion{ .offset = 0x20000000, .length = 128 * 1024, .kind = .ram },
