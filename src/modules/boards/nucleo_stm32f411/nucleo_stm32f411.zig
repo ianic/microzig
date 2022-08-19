@@ -3,6 +3,7 @@ pub const micro = @import("microzig");
 pub const chip = micro.chip;
 pub const regs = chip.registers;
 pub const irq = chip.irq;
+pub const gpio = chip.gpio;
 
 pub const Config = struct {
     led_enable: bool = true,
@@ -18,13 +19,8 @@ pub fn init(cfg: Config) void {
     }
 }
 
-pub const pin_map = .{
-    .LD2 = "PA5",
-    .B1 = "PC13",
-};
-
-pub const led = chip.Pin("PA5").Output(.{});
-pub const button = chip.Pin("PC13").Input(.{ .irq_enable = true });
+pub const led = gpio.PA5.Output(.{});
+pub const button = gpio.PC13.Input(.{ .irq_enable = true });
 
 // this board uses crystal oscilator from st-link part of the board for hse
 pub const hse_frequency = 8_000_000; // 8 MHz

@@ -36,12 +36,13 @@ const std = @import("std");
 const micro = @import("microzig");
 const chip = @import("registers.zig");
 const regs = chip.registers;
-pub const irq = @import("irq.zig");
+
 pub const clk = @import("clock.zig");
 pub const Frequencies = clk.Frequencies;
-//pub const hsi_100 = clk.hsi_100;
-//pub const hsi_96 = clk.hsi_96;
+
+pub const irq = @import("irq.zig");
 pub const adc = @import("adc.zig");
+pub const gpio = @import("gpio.zig");
 
 pub usingnamespace chip;
 
@@ -79,29 +80,7 @@ fn initFeatures(comptime cfg: Config) void {
     regs.SCB.AIRCR.modify(.{ .PRIGROUP = cfg.prigroup, .VECTKEYSTAT = 0x5FA });
 }
 
-pub fn Pin(comptime spec: []const u8) type {
-    assertValidPin(spec);
-    return @import("gpio.zig").Pin(spec);
-}
-
-fn assertValidPin(comptime spec: []const u8) void {
-    if (spec[0] != 'P') @compileError("pin name should start with P");
-    if (!(spec.len == 3 or spec.len == 4)) @compileError("invalid pin name len");
-    const port = spec[1];
-    // A..E and H are valid
-    if (!((port >= 'A' and port <= 'E') or port == 'H'))
-        @compileError("invalid port name");
-    // only PH0 and PH1 are valid
-    if (port == 'H')
-        if (!(spec.len == 3 and (spec[2] == '0' or spec[2] == '1')))
-            @compileError("in port H only PH0 and PH1 pins are available");
-    // suffix is number 0..15
-    const wrap = struct {
-        const pn = std.fmt.parseInt(u4, spec[2..], 10) catch @compileError("pin must be number 0...15");
-    };
-    if (wrap.pn > 15) @compileError("pin number must be 0...15");
-}
-
+// ---------------- gpio microzig
 pub fn parsePin(comptime spec: []const u8) type {
     const invalid_format_msg = "The given pin '" ++ spec ++ "' has an invalid format. Pins must follow the format \"P{Port}{Pin}\" scheme.";
 
@@ -125,7 +104,7 @@ fn setRegField(reg: anytype, comptime field_name: anytype, value: anytype) void 
     reg.write(temp);
 }
 
-pub const gpio = struct {
+pub const gpio_microzig = struct {
     pub const AlternateFunction = enum(u4) {
         af0,
         af1,
@@ -179,7 +158,9 @@ pub const gpio = struct {
         }
     }
 };
+// ---------------- gpio microzig
 
+// ---------------- uart microzig
 pub const uart = struct {
     pub const DataBits = enum {
         seven,
@@ -408,6 +389,7 @@ pub fn Uart(comptime index: usize, comptime pins: micro.uart.Pins) type {
         }
     };
 }
+// ---------------- uart microzig
 
 pub const i2c = struct {
     const PinLine = std.meta.FieldEnum(micro.i2c.Pins);
@@ -812,18 +794,3 @@ pub const Task = struct {
         }
     }
 };
-
-test "assertValidPin" {
-    assertValidPin("PA0");
-    assertValidPin("PA15");
-    assertValidPin("PB0");
-    assertValidPin("PB15");
-    assertValidPin("PC0");
-    assertValidPin("PC15");
-    assertValidPin("PD0");
-    assertValidPin("PD15");
-    assertValidPin("PE0");
-    assertValidPin("PE15");
-    assertValidPin("PH0");
-    assertValidPin("PH1");
-}
