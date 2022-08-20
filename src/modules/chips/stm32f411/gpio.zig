@@ -156,16 +156,12 @@ fn ParsedPin(comptime spec: []const u8) type {
         const cr_suffix = std.fmt.comptimePrint("{d}", .{pin_number / 4 + 1}); // 0-3 => '1', 4-7 => '2', ...
 
         // regs.GPIOx.[reg_name].[field]y = value
-        fn set(
-            comptime reg_name: []const u8,
-            comptime field: []const u8,
-            value: anytype,
-        ) void {
-            setRegField(@field(reg, reg_name), field ++ suffix, value);
+        fn set(comptime reg_name: []const u8, comptime prefix: []const u8, value: anytype) void {
+            @field(reg, reg_name).set(prefix ++ suffix, value);
         }
 
         fn initClock() void {
-            setRegField(regs.RCC.AHB1ENR, name ++ "EN", 1); // regs.RCC.AHB1ENR.GPIOxEN = 1
+            regs.RCC.AHB1ENR.set(name ++ "EN", 1); // regs.RCC.AHB1ENR.GPIOxEN = 1
         }
 
         fn initMode(mode: Mode, pull: Pull) void {
@@ -185,8 +181,8 @@ fn ParsedPin(comptime spec: []const u8) type {
 
         fn initAlternateFunction(comptime c: AlternateFunctionConfig) void {
             initMode(.alternate_function, c.pull);
-            const r = if (pin_number < 8) "AFRL" else "AFRH";
-            set(r, r, c.af); // regs.GPIOx.AFRL.AFRLy = z
+            const reg_name = if (pin_number < 8) "AFRL" else "AFRH";
+            set(reg_name, reg_name, c.af); // regs.GPIOx.AFRL.AFRLy = z
         }
 
         fn read() u1 {
@@ -287,15 +283,15 @@ fn Exti(comptime pp: anytype) type {
 
             // regs.SYSCFG.EXTICR[cr_reg_no].modify(.{ .EXTI[suffix] = [port_number] });
             const cr_reg = @field(regs.SYSCFG, "EXTICR" ++ pp.cr_suffix);
-            setRegField(cr_reg, "EXTI" ++ pp.suffix, pp.port_number);
+            cr_reg.set("EXTI" ++ pp.suffix, pp.port_number);
 
             if (trigger == .falling or .trigger == .both) {
-                setRegField(regs.EXTI.FTSR, "TR" ++ pp.suffix, 1); // regs.EXTI.FTSR.modify(.{ .TR[suffix] = 1 });
+                regs.EXTI.FTSR.set("TR" ++ pp.suffix, 1); // regs.EXTI.FTSR.modify(.{ .TR[suffix] = 1 });
             }
             if (trigger == .rising or .trigger == .both) {
-                setRegField(regs.EXTI.RTSR, "TR" ++ pp.suffix, 1); // regs.EXTI.RTSR.modify(.{ .TR[suffix] = 1 });
+                regs.EXTI.RTSR.set("TR" ++ pp.suffix, 1); // regs.EXTI.RTSR.modify(.{ .TR[suffix] = 1 });
             }
-            setRegField(regs.EXTI.IMR, "MR" ++ pp.suffix, 1); // regs.EXTI.IMR.modify(.{ .MR[suffix] = 1 });
+            regs.EXTI.IMR.set("MR" ++ pp.suffix, 1); // regs.EXTI.IMR.modify(.{ .MR[suffix] = 1 });
 
             irq.enable(irqn);
         }
@@ -319,12 +315,6 @@ fn Exti(comptime pp: anytype) type {
             return is_pending;
         }
     };
-}
-
-fn setRegField(reg: anytype, comptime field_name: anytype, value: anytype) void {
-    var temp = reg.read();
-    @field(temp, field_name) = value;
-    reg.write(temp);
 }
 
 test "irq params" {
