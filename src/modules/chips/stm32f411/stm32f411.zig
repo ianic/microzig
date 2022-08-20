@@ -39,10 +39,13 @@ const regs = chip.registers;
 
 pub const clk = @import("clock.zig");
 pub const Frequencies = clk.Frequencies;
+pub const hsi_100 = clk.hsi_100;
+pub const hsi_96 = clk.hsi_96;
 
 pub const irq = @import("irq.zig");
 pub const adc = @import("adc.zig");
 pub const gpio = @import("gpio.zig");
+pub const uart = @import("uart.zig");
 
 pub usingnamespace chip;
 
@@ -161,7 +164,7 @@ pub const gpio_microzig = struct {
 // ---------------- gpio microzig
 
 // ---------------- uart microzig
-pub const uart = struct {
+pub const uart_microzig = struct {
     pub const DataBits = enum {
         seven,
         eight,

@@ -184,12 +184,9 @@ fn ParsedPin(comptime spec: []const u8) type {
         }
 
         fn initAlternateFunction(comptime c: AlternateFunctionConfig) void {
-            initMode(.alternate_function, c.none);
-            if (c.af < 8) {
-                c.set("AFRL", "AFRL", @enumToInt(c.af)); // regs.GPIOx.AFRL.AFRLy = z
-            } else {
-                c.set("AFRH", "AFRH", @enumToInt(c.af)); // regs.GPIOx.AFRH.AFRHy = z
-            }
+            initMode(.alternate_function, c.pull);
+            const r = if (pin_number < 8) "AFRL" else "AFRH";
+            set(r, r, c.af); // regs.GPIOx.AFRL.AFRLy = z
         }
 
         fn read() u1 {
