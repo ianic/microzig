@@ -51,8 +51,8 @@ const uart1_data = struct {
     };
 };
 
-pub fn Uart1(comptime pins: Config) type {
-    return UartX(uart1_data, pins);
+pub fn Uart1(comptime config: Config) type {
+    return UartX(uart1_data, config);
 }
 
 fn usartDiv(bus_frequency: u32, baud_rate: u32) u16 {
@@ -87,10 +87,8 @@ fn UartX(comptime data: type, comptime config: Config) type {
 
     const usartdiv = usartDiv(@field(config.clock_frequencies, data.clock.bus), config.baud_rate);
 
-    // TODO dodaj ostale funkcije
-    // ako nije definirao rx nemoj mu napraviti read funkciju ili nesto tako
-    // vratis razliciti struct iz init
-    // uf oce mi to razjebati onaj type koji sam zapamtio u main
+    // regs.USARTx
+    const reg = @field(regs, data.name);
 
     return struct {
         parity_read_mask: u8,
@@ -99,77 +97,69 @@ fn UartX(comptime data: type, comptime config: Config) type {
 
         pub fn init() Self {
             // The following must all be written when the USART is disabled (UE=0).
-            if (@field(regs, data.name).CR1.read().UE == 1) {
-                @field(regs, data.name).CR1.modify(.{ .UE = 0 });
+            if (reg.CR1.read().UE == 1) {
+                reg.CR1.modify(.{ .UE = 0 });
                 // TODO: do we need something more here
             }
 
-            // enable the USART clock:  reg.RCC.APBxENR.modify(.{.USARTyEN = 1});
-            setRegField(@field(regs.RCC, data.clock.reg ++ "ENR"), data.name ++ "EN", 1);
+            // enable the USART clock: reg.RCC.APBxENR.modify(.{.USARTyEN = 1});
+            @field(regs.RCC, data.clock.reg ++ "ENR").set(data.name ++ "EN", 1);
 
             // clear configuration to its default
-            @field(regs, data.name).CR1.raw = 0;
-            @field(regs, data.name).CR2.raw = 0;
-            @field(regs, data.name).CR3.raw = 0;
+            reg.CR1.raw = 0;
+            reg.CR2.raw = 0;
+            reg.CR3.raw = 0;
 
             // set word length
-            @field(regs, data.name).CR1.modify(.{ .M = wordLength(config) });
+            const m = wordLength(config);
+            reg.CR1.modify(.{ .M = m });
 
-            // set parity
+            // set parity, PCE: Parity control enable, PS: Parity selection (even/odd)
             if (config.parity) |parity| {
-                @field(regs, data.name).CR1.modify(.{ .PCE = 1, .PS = @enumToInt(parity) });
+                reg.CR1.modify(.{ .PCE = 1, .PS = @enumToInt(parity) });
             } // otherwise, no need to set no parity since we reset Control Registers above, and it's the default
 
             // set number of stop bits
-            @field(regs, data.name).CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) });
+            reg.CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) });
             // set baud rate
-            @field(regs, data.name).BRR.raw = usartdiv;
+            reg.BRR.raw = usartdiv;
 
-            // enable transmitter, receiver and USART
-            if (config.tx) |pin| {
+            if (config.tx) |pin| { // enable transmitter
                 pin.AlternateFunction(.{ .af = data.pin.af }).init();
-                @field(regs, data.name).CR1.modify(.{ .TE = 1 });
+                reg.CR1.modify(.{ .TE = 1 });
             }
-            if (config.rx) |pin| {
+            if (config.rx) |pin| { // enable receiver
                 pin.AlternateFunction(.{ .af = data.pin.af }).init();
-                @field(regs, data.name).CR1.modify(.{ .RE = 1 });
+                reg.CR1.modify(.{ .RE = 1 });
             }
-            @field(regs, data.name).CR1.modify(.{ .UE = 1 });
+            reg.CR1.modify(.{ .UE = 1 }); // enable the USART
 
-            // For code simplicity, at cost of one or more register reads,
-            // we read back the actual configuration from the registers,
-            // instead of using the `config` values.
-            return readFromRegisters();
-        }
-
-        fn readFromRegisters() Self {
-            const cr1 = @field(regs, data.name).CR1.read();
-            // As documented in `init()`, M0==1 means 'the 9th bit (not the 8th bit) is the parity bit'.
+            // m ==1 means 'the 9th bit (not the 8th bit) is the parity bit'.
             // So we always mask away the 9th bit, and if parity is enabled and it is in the 8th bit,
             // then we also mask away the 8th bit.
-            return Self{ .parity_read_mask = if (cr1.PCE == 1 and cr1.M == 0) 0x7F else 0xFF };
+            return Self{ .parity_read_mask = if (config.parity != null and m == 0) 0x7F else 0xFF };
         }
 
         pub fn canWrite(_: Self) bool {
-            return @field(regs, data.name).SR.read().TXE == 1;
+            return reg.SR.read().TXE == 1;
         }
 
         pub fn tx(self: Self, ch: u8) void {
             while (!self.canWrite()) {} // Wait for Previous transmission
-            @field(regs, data.name).DR.modify(ch);
+            reg.DR.modify(ch);
         }
 
         pub fn txflush(_: Self) void {
-            while (@field(regs, data.name).SR.read().TC == 0) {}
+            while (reg.SR.read().TC == 0) {}
         }
 
         pub fn canRead(_: Self) bool {
-            return @field(regs, data.name).SR.read().RXNE == 1;
+            return reg.SR.read().RXNE == 1;
         }
 
         pub fn rx(self: Self) u8 {
             while (!self.canRead()) {} // Wait till the data is received
-            const data_with_parity_bit: u9 = @field(regs, data.name).DR.read();
+            const data_with_parity_bit: u9 = reg.DR.read();
             return @intCast(u8, data_with_parity_bit & self.parity_read_mask);
         }
     };
@@ -227,10 +217,4 @@ test "assertValidPins" {
     // afs = assertValidPins(6, .{ .tx = gpio.PC6, .rx = gpio.PC7 });
     // try std.testing.expectEqual(afs.tx.?, 8);
     // try std.testing.expectEqual(afs.rx.?, 8);
-}
-
-fn setRegField(reg: anytype, comptime field_name: anytype, value: anytype) void {
-    var temp = reg.read();
-    @field(temp, field_name) = value;
-    reg.write(temp);
 }
