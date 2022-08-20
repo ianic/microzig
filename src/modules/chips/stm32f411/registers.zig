@@ -24333,6 +24333,12 @@ pub fn Mmio(comptime size: u8, comptime PackedT: type) type {
             }
             write(addr, val);
         }
+
+        pub inline fn set(self: *volatile Self, comptime field: anytype, value: anytype) void {
+            var temp = self.read();
+            @field(temp, field) = value;
+            self.write(temp);
+        }
     };
 }
 
