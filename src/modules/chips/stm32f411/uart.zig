@@ -167,12 +167,12 @@ fn Pooling(comptime data: type, comptime config: Config) type {
             return Self{ .parity_read_mask = if (config.parity != null and m == 0) 0x7F else 0xFF };
         }
 
-        pub fn canWrite(_: Self) bool {
+        pub fn txReady(_: Self) bool {
             return reg.SR.read().TXE == 1;
         }
 
         pub fn tx(self: Self, ch: u8) void {
-            while (!self.canWrite()) {} // Wait for Previous transmission
+            while (!self.txReady()) {} // Wait for Previous transmission
             reg.DR.modify(ch);
         }
 
@@ -180,12 +180,12 @@ fn Pooling(comptime data: type, comptime config: Config) type {
             while (reg.SR.read().TC == 0) {}
         }
 
-        pub fn canRead(_: Self) bool {
+        pub fn rxReady(_: Self) bool {
             return reg.SR.read().RXNE == 1;
         }
 
         pub fn rx(self: Self) u8 {
-            while (!self.canRead()) {} // Wait till the data is received
+            while (!self.rxReady()) {} // Wait till the data is received
             const data_with_parity_bit: u9 = reg.DR.read();
             return @intCast(u8, data_with_parity_bit & self.parity_read_mask);
         }
