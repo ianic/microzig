@@ -5,146 +5,80 @@
 // cpu: CM4
 
 pub const VectorTable = extern struct {
+    // zig fmt: off
     initial_stack_pointer: u32,
-    Reset: InterruptVector = unhandled,
-    NMI: InterruptVector = unhandled,
-    HardFault: InterruptVector = unhandled,
-    MemManage: InterruptVector = unhandled,
-    BusFault: InterruptVector = unhandled,
-    UsageFault: InterruptVector = unhandled,
-    reserved0: [4]u32 = undefined,
-    SVCall: InterruptVector = unhandled,
-    reserved1: [2]u32 = undefined,
-    PendSV: InterruptVector = unhandled,
-    SysTick: InterruptVector = unhandled,
-    reserved2: u32 = undefined,
-    /// PVD through EXTI line detection
-    /// interrupt
-    PVD: InterruptVector = unhandled,
-    /// Tamper and TimeStamp interrupts through the
-    /// EXTI line
-    TAMP_STAMP: InterruptVector = unhandled,
-    /// RTC Wakeup interrupt through the EXTI
-    /// line
-    RTC_WKUP: InterruptVector = unhandled,
-    /// FLASH global interrupt
-    FLASH: InterruptVector = unhandled,
-    /// RCC global interrupt
-    RCC: InterruptVector = unhandled,
-    /// EXTI Line0 interrupt
-    EXTI0: InterruptVector = unhandled,
-    /// EXTI Line1 interrupt
-    EXTI1: InterruptVector = unhandled,
-    /// EXTI Line2 interrupt
-    EXTI2: InterruptVector = unhandled,
-    /// EXTI Line3 interrupt
-    EXTI3: InterruptVector = unhandled,
-    /// EXTI Line4 interrupt
-    EXTI4: InterruptVector = unhandled,
-    reserved3: u32 = undefined,
-    reserved4: u32 = undefined,
-    reserved5: u32 = undefined,
-    reserved6: u32 = undefined,
-    reserved7: u32 = undefined,
-    reserved8: u32 = undefined,
-    reserved9: u32 = undefined,
-    /// ADC1 global interrupt
-    ADC: InterruptVector = unhandled,
-    reserved10: u32 = undefined,
-    reserved11: u32 = undefined,
-    reserved12: u32 = undefined,
-    reserved13: u32 = undefined,
-    /// EXTI Line[9:5] interrupts
-    EXTI9_5: InterruptVector = unhandled,
-    /// TIM1 Break interrupt and TIM9 global
-    /// interrupt
-    TIM1_BRK_TIM9: InterruptVector = unhandled,
-    /// TIM1 Update interrupt and TIM10 global
-    /// interrupt
-    TIM1_UP_TIM10: InterruptVector = unhandled,
-    /// TIM1 Trigger and Commutation interrupts and
-    /// TIM11 global interrupt
-    TIM1_TRG_COM_TIM11: InterruptVector = unhandled,
-    /// TIM1 Capture Compare interrupt
-    TIM1_CC: InterruptVector = unhandled,
-    /// TIM2 global interrupt
-    TIM2: InterruptVector = unhandled,
-    /// TIM3 global interrupt
-    TIM3: InterruptVector = unhandled,
-    reserved14: u32 = undefined,
-    /// I2C1 event interrupt
-    I2C1_EV: InterruptVector = unhandled,
-    /// I2C1 error interrupt
-    I2C1_ER: InterruptVector = unhandled,
-    /// I2C2 event interrupt
-    I2C2_EV: InterruptVector = unhandled,
-    /// I2C2 error interrupt
-    I2C2_ER: InterruptVector = unhandled,
-    /// SPI1 global interrupt
-    SPI1: InterruptVector = unhandled,
-    /// SPI2 global interrupt
-    SPI2: InterruptVector = unhandled,
-    reserved15: u32 = undefined,
-    reserved16: u32 = undefined,
-    reserved17: u32 = undefined,
-    /// EXTI Line[15:10] interrupts
-    EXTI15_10: InterruptVector = unhandled,
-    /// RTC Alarms (A and B) through EXTI line
-    /// interrupt
-    RTC_Alarm: InterruptVector = unhandled,
-    /// USB On-The-Go FS Wakeup through EXTI line
-    /// interrupt
-    OTG_FS_WKUP: InterruptVector = unhandled,
-    reserved18: u32 = undefined,
-    reserved19: u32 = undefined,
-    reserved20: u32 = undefined,
-    reserved21: u32 = undefined,
-    reserved22: u32 = undefined,
-    reserved23: u32 = undefined,
-    /// SDIO global interrupt
-    SDIO: InterruptVector = unhandled,
-    reserved24: u32 = undefined,
-    /// SPI3 global interrupt
-    SPI3: InterruptVector = unhandled,
-    reserved25: u32 = undefined,
-    reserved26: u32 = undefined,
-    reserved27: u32 = undefined,
-    reserved28: u32 = undefined,
-    reserved29: u32 = undefined,
-    reserved30: u32 = undefined,
-    reserved31: u32 = undefined,
-    reserved32: u32 = undefined,
-    reserved33: u32 = undefined,
-    reserved34: u32 = undefined,
-    reserved35: u32 = undefined,
-    reserved36: u32 = undefined,
-    reserved37: u32 = undefined,
-    reserved38: u32 = undefined,
-    reserved39: u32 = undefined,
-    /// USB On The Go FS global
-    /// interrupt
-    OTG_FS: InterruptVector = unhandled,
-    reserved40: u32 = undefined,
-    reserved41: u32 = undefined,
-    DMA2_Stream7: InterruptVector = unhandled,
-    reserved43: u32 = undefined,
-    /// I2C3 event interrupt
-    I2C3_EV: InterruptVector = unhandled,
-    /// I2C3 error interrupt
-    I2C3_ER: InterruptVector = unhandled,
-    reserved44: u32 = undefined,
-    reserved45: u32 = undefined,
-    reserved46: u32 = undefined,
-    reserved47: u32 = undefined,
-    reserved48: u32 = undefined,
-    reserved49: u32 = undefined,
-    reserved50: u32 = undefined,
-    /// FPU interrupt
-    FPU: InterruptVector = unhandled,
-    reserved51: u32 = undefined,
-    reserved52: u32 = undefined,
-    /// SPI4 global interrupt
-    SPI4: InterruptVector = unhandled,
+    // Cortex-M4 Processor Exceptions Numbers
+    Reset               : InterruptVector = unhandled,
+    NMI                 : InterruptVector = unhandled, // -14 Non Maskable Interrupt
+    HardFault           : InterruptVector = unhandled, // -13 All class of fault
+    MemManage           : InterruptVector = unhandled, // -12 Memory Management Interrupt
+    BusFault            : InterruptVector = unhandled, // -11 Bus Fault Interrupt
+    UsageFault          : InterruptVector = unhandled, // -10 Usage Fault Interrupt
+    reserved0           : [4]u32 = undefined,
+    SVCall              : InterruptVector = unhandled, // -5  SV Call Interrupt
+    DebugMonitor        : InterruptVector = unhandled, // -4  Pend SV Interrupt
+    reserved1           : [1]u32 = undefined,
+    PendSV              : InterruptVector = unhandled, // -2  Pend SV Interrupt
+    SysTick             : InterruptVector = unhandled, // -1  System Tick Interrupt
+    // STM32 specific Interrupt Numbers
+    WWDG                : InterruptVector = unhandled, // 0   Window WatchDog Interrupt
+    PVD                 : InterruptVector = unhandled, // 1   PVD through EXTI Line detection Interrupt
+    TAMP_STAMP          : InterruptVector = unhandled, // 2   Tamper and TimeStamp interrupts through the EXTI line
+    RTC_WKUP            : InterruptVector = unhandled, // 3   RTC Wakeup interrupt through the EXTI line
+    FLASH               : InterruptVector = unhandled, // 4   FLASH global Interrupt
+    RCC                 : InterruptVector = unhandled, // 5   RCC global Interrupt
+    EXTI0               : InterruptVector = unhandled, // 6   EXTI Line0 Interrupt
+    EXTI1               : InterruptVector = unhandled, // 7   EXTI Line1 Interrupt
+    EXTI2               : InterruptVector = unhandled, // 8   EXTI Line2 Interrupt
+    EXTI3               : InterruptVector = unhandled, // 9   EXTI Line3 Interrupt
+    EXTI4               : InterruptVector = unhandled, // 10  EXTI Line4 Interrupt
+    DMA1_Stream0        : InterruptVector = unhandled, // 11  DMA1 Stream 0 global Interrupt
+    DMA1_Stream1        : InterruptVector = unhandled, // 12  DMA1 Stream 1 global Interrupt
+    DMA1_Stream2        : InterruptVector = unhandled, // 13  DMA1 Stream 2 global Interrupt
+    DMA1_Stream3        : InterruptVector = unhandled, // 14  DMA1 Stream 3 global Interrupt
+    DMA1_Stream4        : InterruptVector = unhandled, // 15  DMA1 Stream 4 global Interrupt
+    DMA1_Stream5        : InterruptVector = unhandled, // 16  DMA1 Stream 5 global Interrupt
+    DMA1_Stream6        : InterruptVector = unhandled, // 17  DMA1 Stream 6 global Interrupt
+    ADC                 : InterruptVector = unhandled, // 18  ADC1, ADC2 and ADC3 global Interrupts
+    EXTI9_5             : InterruptVector = unhandled, // 23  External Line[9:5] Interrupts
+    TIM1_BRK_TIM9       : InterruptVector = unhandled, // 24  TIM1 Break interrupt and TIM9 global interrupt
+    TIM1_UP_TIM10       : InterruptVector = unhandled, // 25  TIM1 Update Interrupt and TIM10 global interrupt
+    TIM1_TRG_COM_TIM11  : InterruptVector = unhandled, // 26  TIM1 Trigger and Commutation Interrupt and TIM11 global interrupt
+    TIM1_CC             : InterruptVector = unhandled, // 27  TIM1 Capture Compare Interrupt
+    TIM2                : InterruptVector = unhandled, // 28  TIM2 global Interrupt
+    TIM3                : InterruptVector = unhandled, // 29  TIM3 global Interrupt
+    TIM4                : InterruptVector = unhandled, // 30  TIM4 global Interrupt
+    I2C1_EV             : InterruptVector = unhandled, // 31  I2C1 Event Interrupt
+    I2C1_ER             : InterruptVector = unhandled, // 32  I2C1 Error Interrupt
+    I2C2_EV             : InterruptVector = unhandled, // 33  I2C2 Event Interrupt
+    I2C2_ER             : InterruptVector = unhandled, // 34  I2C2 Error Interrupt
+    SPI1                : InterruptVector = unhandled, // 35  SPI1 global Interrupt
+    SPI2                : InterruptVector = unhandled, // 36  SPI2 global Interrupt
+    USART1              : InterruptVector = unhandled, // 37  USART1 global Interrupt
+    USART2              : InterruptVector = unhandled, // 38  USART2 global Interrupt
+    EXTI15_10           : InterruptVector = unhandled, // 40  External Line[15:10] Interrupts
+    RTC_Alarm           : InterruptVector = unhandled, // 41  RTC Alarm (A and B) through EXTI Line Interrupt
+    OTG_FS_WKUP         : InterruptVector = unhandled, // 42  USB OTG FS Wakeup through EXTI line interrupt
+    DMA1_Stream7        : InterruptVector = unhandled, // 47  DMA1 Stream7 Interrupt
+    SDIO                : InterruptVector = unhandled, // 49  SDIO global Interrupt
+    TIM5                : InterruptVector = unhandled, // 50  TIM5 global Interrupt
+    SPI3                : InterruptVector = unhandled, // 51  SPI3 global Interrupt
+    DMA2_Stream0        : InterruptVector = unhandled, // 56  DMA2 Stream 0 global Interrupt
+    DMA2_Stream1        : InterruptVector = unhandled, // 57  DMA2 Stream 1 global Interrupt
+    DMA2_Stream2        : InterruptVector = unhandled, // 58  DMA2 Stream 2 global Interrupt
+    DMA2_Stream3        : InterruptVector = unhandled, // 59  DMA2 Stream 3 global Interrupt
+    DMA2_Stream4        : InterruptVector = unhandled, // 60  DMA2 Stream 4 global Interrupt
+    OTG_FS              : InterruptVector = unhandled, // 67  USB OTG FS global Interrupt
+    DMA2_Stream5        : InterruptVector = unhandled, // 68  DMA2 Stream 5 global interrupt
+    DMA2_Stream6        : InterruptVector = unhandled, // 69  DMA2 Stream 6 global interrupt
+    DMA2_Stream7        : InterruptVector = unhandled, // 70  DMA2 Stream 7 global interrupt
+    USART6              : InterruptVector = unhandled, // 71  USART6 global interrupt
+    I2C3_EV             : InterruptVector = unhandled, // 72  I2C3 event interrupt
+    I2C3_ER             : InterruptVector = unhandled, // 73  I2C3 error interrupt
+    FPU                 : InterruptVector = unhandled, // 81  FPU global interrupt
+    SPI4                : InterruptVector = unhandled, // 84  SPI4 global Interrupt
+    SPI5                : InterruptVector = unhandled, // 85  SPI5 global Interrupt
+    // zig fmt: on
 };
 
 pub const registers = struct {
