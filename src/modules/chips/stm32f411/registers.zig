@@ -126,7 +126,7 @@ pub const VectorTable = extern struct {
     OTG_FS: InterruptVector = unhandled,
     reserved40: u32 = undefined,
     reserved41: u32 = undefined,
-    reserved42: u32 = undefined,
+    DMA2_Stream7: InterruptVector = unhandled,
     reserved43: u32 = undefined,
     /// I2C3 event interrupt
     I2C3_EV: InterruptVector = unhandled,

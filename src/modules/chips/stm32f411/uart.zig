@@ -132,6 +132,7 @@ fn UartX(comptime data: type, comptime config: Config) type {
                 pin.AlternateFunction(.{ .af = data.pin.af }).init();
                 reg.CR1.modify(.{ .RE = 1 });
             }
+            reg.CR3.modify(.{ .DMAT = 1 }); // enable dma transmitter
             reg.CR1.modify(.{ .UE = 1 }); // enable the USART
 
             // m ==1 means 'the 9th bit (not the 8th bit) is the parity bit'.
