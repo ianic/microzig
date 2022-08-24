@@ -101,7 +101,7 @@ const uart1_data = struct {
             const channel = 4;
         };
         const rx = struct {
-            const stream = 2;
+            const stream = 5;
             const channel = 4;
         };
     };
@@ -135,8 +135,44 @@ fn UartX(comptime data: type, comptime config: Config) type {
     assertValidPins(data, config.tx, config.rx);
     assertConfig(config);
 
+    const uart = Pooling(data, config);
+
     if (config.dma_enable) {
-        return Dma(data, config);
+        const peripheral_address = @ptrToInt(@field(regs, data.name).DR);
+        const dmaTx = DmaRx(DmaConfig{
+            .controller = data.dma.controller,
+            .stream = data.dma.tx.stream,
+            .channel = data.dma.tx.channel,
+            .peripheral_address = peripheral_address,
+            .direction = .memory2peripheral,
+        });
+        const dmaRx = DmaRx(DmaConfig{
+            .controller = data.dma.controller,
+            .stream = data.dma.rx.stream,
+            .channel = data.dma.rx.channel,
+            .peripheral_address = peripheral_address,
+            .direction = .peripheral2memory,
+        });
+
+        return struct {
+            pub fn init() void {
+                _ = uart.init();
+                dmaTx.init();
+                dmaRx.init();
+            }
+            pub const tx = struct {
+                pub const start = dmaTx.start;
+                pub const ready = dmaTx.ready;
+                pub const complete = dmaTx.complete;
+                pub const pending = dmaTx.pending;
+            };
+            pub const rx = struct {
+                pub const start = dmaRx.start;
+                pub const ready = dmaRx.ready;
+                pub const complete = dmaRx.complete;
+                pub const pending = dmaRx.pending;
+            };
+        };
     } else {
         return Pooling(data, config);
     }
@@ -291,39 +327,50 @@ test "assertValidPins" {
     // try std.testing.expectEqual(afs.rx.?, 8);
 }
 
-fn Dma(comptime data: type, comptime config: Config) type {
-    const Uart = Pooling(data, config);
+const DmaConfig = struct {
+    controller: []const u8,
+    stream: u8,
+    channel: u8,
+    peripheral_address: u32,
+    direction: DmaDirection,
+};
 
-    const ctl = data.dma.controller;
-    const stream = std.fmt.comptimePrint("{d}", .{data.dma.tx.stream}); // to string
+const DmaDirection = enum(u2) {
+    peripheral2memory = 0b00,
+    memory2peripheral = 0b01,
+};
+
+fn DmaRx(comptime config: DmaConfig) type {
+    const ctl = config.controller;
+    const stream = std.fmt.comptimePrint("{d}", .{config.stream}); // to string TODO
 
     const cr_reg = @field(@field(regs, ctl), "S" ++ stream ++ "CR"); // control register
     const ndtr_reg = @field(@field(regs, ctl), "S" ++ stream ++ "NDTR"); // number of data register
     const pa_reg = @field(@field(regs, ctl), "S" ++ stream ++ "PAR"); // peripheral address register
     const ma_reg = @field(@field(regs, ctl), "S" ++ stream ++ "M0AR"); // memory address register
 
-    const hl_pre = if (data.dma.tx.stream > 3) "H" else "L"; // high/low interrupt status/flag register preffix
+    const hl_pre = if (config.stream > 3) "H" else "L"; // high/low interrupt status/flag register preffix TODO
     const st_reg = @field(@field(regs, ctl), hl_pre ++ "ISR"); // interrupt status register
     const fc_reg = @field(@field(regs, ctl), hl_pre ++ "IFCR"); // interrupt flag clear register
 
-    const peripheral_address = @ptrToInt(@field(regs, data.name).DR);
+    const peripheral_address = config.peripheral_address;
 
     return struct {
-        const Self = @This();
-
         // transfer complete flag is set
-        pub fn txComplete(_: Self) bool {
+        pub fn complete() bool {
             return readIntFlag("TC");
         }
 
-        // Returns true if transfer is started. False if can't be started now,
-        // previous is still in progress.
-        //
-        // We are not waiting for previous transfer to complete, that decision
-        // is pushed to the caller. To decide whether to wait or do something
-        // while waiting.
-        pub fn tx(self: Self, buf: []u8) bool {
-            if (!self.txReady()) {
+        pub fn pending() bool {
+            const tc = readIntFlag("TC");
+            if (tc) {
+                clearIntFlag("TC");
+            }
+            return tc;
+        }
+
+        pub fn start(buf: []u8) bool {
+            if (!ready()) {
                 return false;
             }
 
@@ -342,12 +389,12 @@ fn Dma(comptime data: type, comptime config: Config) type {
             return true;
         }
 
-        pub fn enabled(_: Self) bool {
+        pub fn enabled() bool {
             return cr_reg.read().EN == 1;
         }
 
-        pub fn txReady(self: Self) bool {
-            return if (self.enabled()) self.txComplete() else true;
+        pub fn ready() bool {
+            return if (enabled()) complete() else true;
         }
 
         // read interrupt flag, where flag is TC, HT, TE, DME or FE
@@ -368,8 +415,7 @@ fn Dma(comptime data: type, comptime config: Config) type {
             clearIntFlag("FE"); // fifo error
         }
 
-        pub fn init() Self {
-            _ = Uart.init();
+        pub fn init() void {
             // enable clock
             // regs.RCC.AHB1ENR.modify(.{ .DMAxEN = 1 });
             regs.RCC.AHB1ENR.set(ctl ++ "EN", 1);
@@ -379,18 +425,18 @@ fn Dma(comptime data: type, comptime config: Config) type {
 
             clearIntFlags();
 
+            cr_reg.raw = 0;
             cr_reg.modify(.{
-                .CHSEL = 4, // channel
-                .DIR = 0b01, // direction: memory to periperal
+                .CHSEL = config.channel, // channel
+                .DIR = @enumToInt(config.direction), // direction
                 .CIRC = 0, // circular mode disabled
                 .PINC = 0, // periperal increment mode: fixed
                 .MINC = 1, // memory address pointer is incremented after each data transfer
                 .PSIZE = 0b00, // peripheral data size: byte
                 .MSIZE = 0b00, // memory data size: byte
-                //.TCIE = 1, // transfer complete interrupt enable
+                .TCIE = 1, // transfer complete interrupt enable
             });
-            //irq.enable(.dma2_stream7);
-            return Self{};
+            irq.enable(.dma2_stream5); // TODO
         }
     };
 }
