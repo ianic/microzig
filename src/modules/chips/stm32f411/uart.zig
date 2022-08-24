@@ -1,5 +1,6 @@
 const std = @import("std");
 const gpio = @import("gpio.zig");
+const irq = @import("irq.zig");
 const regs = @import("registers.zig").registers;
 const clk = @import("clock.zig");
 const Frequencies = clk.Frequencies;
@@ -16,7 +17,44 @@ pub const Config = struct {
     parity: ?Parity = null,
     data_bits: DataBits = .eight,
 
-    dma_enable: bool = true,
+    dma_enable: bool = false,
+
+    const Self = @This();
+
+    fn parity_control_enable(comptime self: Self) u1 {
+        return if (self.parity != null) 1 else 0;
+    }
+    fn parity_selection(comptime self: Self) u1 {
+        return if (self.parity != null) @enumToInt(self.parity) else 0;
+    }
+    fn wordLength(comptime self: Config) u1 {
+        // Per the reference manual, M means
+        // - 0: 1 start bit, 8 data bits (7 data + 1 parity, or 8 data), n stop bits, the chip default
+        // - 1: 1 start bit, 9 data bits (8 data + 1 parity, or 9 data), n stop bits
+        return if (self.data_bits == .nine or (self.data_bits == .eight and self.parity != null)) 1 else 0;
+    }
+    fn tx_enable(comptime self: Config) u1 {
+        return if (self.tx != null) 1 else 0;
+    }
+    fn rx_enable(comptime self: Config) u1 {
+        return if (self.rx != null) 1 else 0;
+    }
+    fn parity_read_mask(comptime self: Config) u8 {
+        // m ==1 means 'the 9th bit (not the 8th bit) is the parity bit'.
+        // So we always mask away the 9th bit, and if parity is enabled and it is in the 8th bit,
+        // then we also mask away the 8th bit.
+        return if (self.parity != null and self.wordLength() == 0) 0x7F else 0xFF;
+    }
+    fn usartdiv(comptime self: Self, comptime clock_bus: []const u8) u16 {
+        // Despite the reference manual talking about fractional calculation and other buzzwords,
+        // it is actually just a simple divider. Just ignore DIV_Mantissa and DIV_Fraction and
+        // set the result of the division as the lower 16 bits of BRR.
+        // TODO: We assume the default OVER8=0 configuration above (i.e. 16x oversampling).
+        // TODO: Do some checks to see if the baud rate is too high (or perhaps too low)
+        // TODO: Do a rounding div, instead of a truncating div?
+        const bus_frequency = @field(self.clock_frequencies, clock_bus);
+        return @intCast(u16, @divTrunc(bus_frequency, self.baud_rate));
+    }
 };
 
 pub const DataBits = enum {
@@ -37,6 +75,11 @@ pub const StopBits = enum(u2) {
 pub const Parity = enum(u1) {
     even = 0,
     odd = 1,
+};
+
+pub const IrqEnableDisable = enum {
+    enable,
+    disable,
 };
 
 const uart1_data = struct {
@@ -62,29 +105,23 @@ const uart1_data = struct {
             const channel = 4;
         };
     };
+    const irqn = irq.Irq.usart1;
 };
 
 pub fn Uart1(comptime config: Config) type {
     return UartX(uart1_data, config);
 }
 
-fn usartDiv(bus_frequency: u32, baud_rate: u32) u16 {
-    // Despite the reference manual talking about fractional calculation and other buzzwords,
-    // it is actually just a simple divider. Just ignore DIV_Mantissa and DIV_Fraction and
-    // set the result of the division as the lower 16 bits of BRR.
-    // TODO: We assume the default OVER8=0 configuration above (i.e. 16x oversampling).
-    // TODO: Do some checks to see if the baud rate is too high (or perhaps too low)
-    // TODO: Do a rounding div, instead of a truncating div?
-    return @intCast(u16, @divTrunc(bus_frequency, baud_rate));
-}
-
-test "usart div" {
+test "Config.usartdiv" {
     try std.testing.expectEqual(100_000_000, @field(clk.hsi_100.frequencies, "apb2"));
     try std.testing.expectEqual(50_000_000, @field(clk.hsi_100.frequencies, "apb1"));
 
-    try std.testing.expectEqual(usartDiv(clk.hsi_100.frequencies.apb2, 9600), 10416);
-    try std.testing.expectEqual(usartDiv(clk.hsi_100.frequencies.apb1, 9600), 5208);
-    try std.testing.expectEqual(usartDiv(clk.hsi_100.frequencies.apb2, 153600), 651);
+    const cfg1 = Config{ .clock_frequencies = clk.hsi_100.frequencies };
+    try std.testing.expectEqual(cfg1.usartdiv("apb2"), 10416);
+    try std.testing.expectEqual(cfg1.usartdiv("apb1"), 5208);
+
+    const cfg2 = Config{ .baud_rate = 153600, .clock_frequencies = clk.hsi_100.frequencies };
+    try std.testing.expectEqual(cfg2.usartdiv("apb2"), 651);
 }
 
 fn wordLength(comptime config: Config) u1 {
@@ -106,7 +143,7 @@ fn UartX(comptime data: type, comptime config: Config) type {
 }
 
 fn Pooling(comptime data: type, comptime config: Config) type {
-    const usartdiv = usartDiv(@field(config.clock_frequencies, data.clock.bus), config.baud_rate);
+    //const usartdiv = usartDiv(@field(config.clock_frequencies, data.clock.bus), config.baud_rate);
 
     // regs.USARTx
     const reg = @field(regs, data.name);
@@ -131,40 +168,48 @@ fn Pooling(comptime data: type, comptime config: Config) type {
             reg.CR2.raw = 0;
             reg.CR3.raw = 0;
 
-            // set word length
-            const m = wordLength(config);
-            reg.CR1.modify(.{ .M = m });
-
-            // set parity, PCE: Parity control enable, PS: Parity selection (even/odd)
-            if (config.parity) |parity| {
-                reg.CR1.modify(.{ .PCE = 1, .PS = @enumToInt(parity) });
-            } // otherwise, no need to set no parity since we reset Control Registers above, and it's the default
-
-            // set number of stop bits
-            reg.CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) });
-            // set baud rate
-            reg.BRR.raw = usartdiv;
-
-            if (config.tx) |pin| { // enable transmitter
-                pin.AlternateFunction(.{ .af = data.pin.af }).init();
-                reg.CR1.modify(.{ .TE = 1 });
-                if (config.dma_enable) { // enable dma transmitter
-                    reg.CR3.modify(.{ .DMAT = 1 });
-                }
+            reg.BRR.raw = config.usartdiv(data.clock.bus); // set baud rate
+            reg.CR1.modify(.{
+                .M = config.wordLength(),
+                .PCE = config.parity_control_enable(),
+                .PS = config.parity_selection(),
+                .TE = config.tx_enable(),
+                .RE = config.rx_enable(),
+            });
+            reg.CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) }); // set number of stop bits
+            if (config.dma_enable) {
+                reg.CR3.modify(.{
+                    .DMAT = 1, // enable dma transmitter
+                    .DMAR = 1, // enable dma receiver
+                });
             }
-            if (config.rx) |pin| { // enable receiver
+
+            // configure gpio pins to required alternate function
+            if (config.tx) |pin| { // transmitter
                 pin.AlternateFunction(.{ .af = data.pin.af }).init();
-                reg.CR1.modify(.{ .RE = 1 });
-                if (config.dma_enable) { // enable dma receiver
-                    reg.CR3.modify(.{ .DMAR = 1 });
-                }
+            }
+            if (config.rx) |pin| { // receiver
+                pin.AlternateFunction(.{ .af = data.pin.af }).init();
             }
 
             reg.CR1.modify(.{ .UE = 1 }); // enable the USART
-            // m ==1 means 'the 9th bit (not the 8th bit) is the parity bit'.
-            // So we always mask away the 9th bit, and if parity is enabled and it is in the 8th bit,
-            // then we also mask away the 8th bit.
-            return Self{ .parity_read_mask = if (config.parity != null and m == 0) 0x7F else 0xFF };
+            irq.enable(data.irqn);
+
+            return Self{ .parity_read_mask = config.parity_read_mask() };
+        }
+
+        pub fn txIrq(_: Self, v: IrqEnableDisable) void {
+            switch (v) {
+                .enable => reg.CR1.modify(.{ .TXEIE = 1 }),
+                .disable => reg.CR1.modify(.{ .TXEIE = 0 }),
+            }
+        }
+
+        pub fn rxIrq(_: Self, v: IrqEnableDisable) void {
+            switch (v) {
+                .enable => reg.CR1.modify(.{ .RXNEIE = 1 }),
+                .disable => reg.CR1.modify(.{ .RXNEIE = 0 }),
+            }
         }
 
         pub fn txReady(_: Self) bool {

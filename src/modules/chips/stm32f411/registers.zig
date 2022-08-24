@@ -7,7 +7,7 @@
 pub const VectorTable = extern struct {
     // zig fmt: off
     initial_stack_pointer: u32,
-    // Cortex-M4 Processor Exceptions Numbers
+    // Cortex-M4 Processor Exceptions
     Reset               : InterruptVector = unhandled,
     NMI                 : InterruptVector = unhandled, // -14 Non Maskable Interrupt
     HardFault           : InterruptVector = unhandled, // -13 All class of fault
@@ -20,7 +20,7 @@ pub const VectorTable = extern struct {
     reserved1           : [1]u32 = undefined,
     PendSV              : InterruptVector = unhandled, // -2  Pend SV Interrupt
     SysTick             : InterruptVector = unhandled, // -1  System Tick Interrupt
-    // STM32 specific Interrupt Numbers
+    // STM32 specific Interrupts
     WWDG                : InterruptVector = unhandled, // 0   Window WatchDog Interrupt
     PVD                 : InterruptVector = unhandled, // 1   PVD through EXTI Line detection Interrupt
     TAMP_STAMP          : InterruptVector = unhandled, // 2   Tamper and TimeStamp interrupts through the EXTI line
