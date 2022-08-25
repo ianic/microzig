@@ -96,13 +96,21 @@ const uart1_data = struct {
     };
     const dma = struct {
         const controller = "DMA2";
-        const tx = struct {
-            const stream = 7;
-            const channel = 4;
+        const rx = DmaConfig{
+            .controller = controller,
+            .stream = 5,
+            .channel = 4,
+            .irqn = irq.Irq.dma2_stream5,
+            .peripheral_address = @ptrToInt(@field(regs, name).DR), // regs.USARTx.DR
+            .direction = .peripheral_to_memory,
         };
-        const rx = struct {
-            const stream = 5;
-            const channel = 4;
+        const tx = DmaConfig{
+            .controller = controller,
+            .stream = 7,
+            .channel = 4,
+            .irqn = irq.Irq.dma2_stream7,
+            .peripheral_address = @ptrToInt(@field(regs, name).DR),
+            .direction = .memory_to_peripheral,
         };
     };
     const irqn = irq.Irq.usart1;
@@ -138,21 +146,8 @@ fn UartX(comptime data: type, comptime config: Config) type {
     const uart = Pooling(data, config);
 
     if (config.dma_enable) {
-        const peripheral_address = @ptrToInt(@field(regs, data.name).DR);
-        const dmaTx = DmaRx(DmaConfig{
-            .controller = data.dma.controller,
-            .stream = data.dma.tx.stream,
-            .channel = data.dma.tx.channel,
-            .peripheral_address = peripheral_address,
-            .direction = .memory2peripheral,
-        });
-        const dmaRx = DmaRx(DmaConfig{
-            .controller = data.dma.controller,
-            .stream = data.dma.rx.stream,
-            .channel = data.dma.rx.channel,
-            .peripheral_address = peripheral_address,
-            .direction = .peripheral2memory,
-        });
+        const dmaTx = UartDma(data.dma.tx);
+        const dmaRx = UartDma(data.dma.rx);
 
         return struct {
             pub fn init() void {
@@ -160,18 +155,8 @@ fn UartX(comptime data: type, comptime config: Config) type {
                 dmaTx.init();
                 dmaRx.init();
             }
-            pub const tx = struct {
-                pub const start = dmaTx.start;
-                pub const ready = dmaTx.ready;
-                pub const complete = dmaTx.complete;
-                pub const pending = dmaTx.pending;
-            };
-            pub const rx = struct {
-                pub const start = dmaRx.start;
-                pub const ready = dmaRx.ready;
-                pub const complete = dmaRx.complete;
-                pub const pending = dmaRx.pending;
-            };
+            pub const tx = dmaTx;
+            pub const rx = dmaRx;
         };
     } else {
         return Pooling(data, config);
@@ -179,17 +164,11 @@ fn UartX(comptime data: type, comptime config: Config) type {
 }
 
 fn Pooling(comptime data: type, comptime config: Config) type {
-    //const usartdiv = usartDiv(@field(config.clock_frequencies, data.clock.bus), config.baud_rate);
-
-    // regs.USARTx
-    const reg = @field(regs, data.name);
+    const reg = @field(regs, data.name); // regs.USARTx
+    const parity_read_mask = config.parity_read_mask();
 
     return struct {
-        parity_read_mask: u8,
-
-        const Self = @This();
-
-        pub fn init() Self {
+        pub fn init() void {
             // The following must all be written when the USART is disabled (UE=0).
             if (reg.CR1.read().UE == 1) {
                 reg.CR1.modify(.{ .UE = 0 });
@@ -230,45 +209,43 @@ fn Pooling(comptime data: type, comptime config: Config) type {
 
             reg.CR1.modify(.{ .UE = 1 }); // enable the USART
             irq.enable(data.irqn);
-
-            return Self{ .parity_read_mask = config.parity_read_mask() };
         }
 
-        pub fn txIrq(_: Self, v: IrqEnableDisable) void {
+        pub fn txIrq(v: IrqEnableDisable) void {
             switch (v) {
                 .enable => reg.CR1.modify(.{ .TXEIE = 1 }),
                 .disable => reg.CR1.modify(.{ .TXEIE = 0 }),
             }
         }
 
-        pub fn rxIrq(_: Self, v: IrqEnableDisable) void {
+        pub fn rxIrq(v: IrqEnableDisable) void {
             switch (v) {
                 .enable => reg.CR1.modify(.{ .RXNEIE = 1 }),
                 .disable => reg.CR1.modify(.{ .RXNEIE = 0 }),
             }
         }
 
-        pub fn txReady(_: Self) bool {
+        pub fn txReady() bool {
             return reg.SR.read().TXE == 1;
         }
 
-        pub fn tx(self: Self, ch: u8) void {
-            while (!self.txReady()) {} // Wait for Previous transmission
+        pub fn tx(ch: u8) void {
+            while (!txReady()) {} // Wait for Previous transmission
             reg.DR.modify(ch);
         }
 
-        pub fn txflush(_: Self) void {
+        pub fn txflush() void {
             while (reg.SR.read().TC == 0) {}
         }
 
-        pub fn rxReady(_: Self) bool {
+        pub fn rxReady() bool {
             return reg.SR.read().RXNE == 1;
         }
 
-        pub fn rx(self: Self) u8 {
-            while (!self.rxReady()) {} // Wait till the data is received
+        pub fn rx() u8 {
+            while (!rxReady()) {} // Wait till the data is received
             const data_with_parity_bit: u9 = reg.DR.read();
-            return @intCast(u8, data_with_parity_bit & self.parity_read_mask);
+            return @intCast(u8, data_with_parity_bit & parity_read_mask);
         }
     };
 }
@@ -333,68 +310,58 @@ const DmaConfig = struct {
     channel: u8,
     peripheral_address: u32,
     direction: DmaDirection,
+    irqn: irq.Irq,
 };
 
 const DmaDirection = enum(u2) {
-    peripheral2memory = 0b00,
-    memory2peripheral = 0b01,
+    peripheral_to_memory = 0b00,
+    memory_to_peripheral = 0b01,
 };
 
-fn DmaRx(comptime config: DmaConfig) type {
-    const ctl = config.controller;
-    const stream = std.fmt.comptimePrint("{d}", .{config.stream}); // to string TODO
+fn UartDma(comptime config: DmaConfig) type {
+    const stream = std.fmt.comptimePrint("{d}", .{config.stream}); // to string
+    const base = @field(regs, config.controller); // regs.DMAx
 
-    const cr_reg = @field(@field(regs, ctl), "S" ++ stream ++ "CR"); // control register
-    const ndtr_reg = @field(@field(regs, ctl), "S" ++ stream ++ "NDTR"); // number of data register
-    const pa_reg = @field(@field(regs, ctl), "S" ++ stream ++ "PAR"); // peripheral address register
-    const ma_reg = @field(@field(regs, ctl), "S" ++ stream ++ "M0AR"); // memory address register
+    const cr_reg = @field(base, "S" ++ stream ++ "CR"); // control register: regs.DMAx.SyCR
+    const ndtr_reg = @field(base, "S" ++ stream ++ "NDTR"); // number of data register, regs.DMAx.SyNDTR
+    const pa_reg = @field(base, "S" ++ stream ++ "PAR"); // peripheral address register, regs.DMAx.SyPAR
+    const ma_reg = @field(base, "S" ++ stream ++ "M0AR"); // memory address register, regs.DMAx.SyM0AR
 
-    const hl_pre = if (config.stream > 3) "H" else "L"; // high/low interrupt status/flag register preffix TODO
-    const st_reg = @field(@field(regs, ctl), hl_pre ++ "ISR"); // interrupt status register
-    const fc_reg = @field(@field(regs, ctl), hl_pre ++ "IFCR"); // interrupt flag clear register
-
-    const peripheral_address = config.peripheral_address;
+    const hl_pre = if (config.stream > 3) "H" else "L"; // high/low interrupt status/flag register preffix
+    const st_reg = @field(base, hl_pre ++ "ISR"); // interrupt status register, regs.DMAx.[H/L]ISR
+    const fc_reg = @field(base, hl_pre ++ "IFCR"); // interrupt flag clear register, regs.DMAx.[H/L]IFCR
 
     return struct {
-        // transfer complete flag is set
+        // in interrupt handler to test the interrupt reason
         pub fn complete() bool {
             return readIntFlag("TC");
         }
 
-        pub fn pending() bool {
-            const tc = readIntFlag("TC");
-            if (tc) {
-                clearIntFlag("TC");
-            }
-            return tc;
+        // if not cleared interrupt will be raised again
+        // no need to clear if start will be called, start is clearing all flags
+        pub fn clearComplete() void {
+            clearIntFlag("TC");
         }
 
-        pub fn start(buf: []u8) bool {
-            if (!ready()) {
-                return false;
-            }
-
+        pub fn start(buf: []u8) void {
             const memory_address = @ptrToInt(&buf[0]);
             const number_of_data_items = @intCast(u16, buf.len);
 
-            cr_reg.modify(.{ .EN = 0 }); // disable stream
-            while (cr_reg.read().EN == 1) {} // wait for disable
-
-            clearIntFlags();
-            pa_reg.modify(.{ .PA = peripheral_address });
+            disable();
+            pa_reg.modify(.{ .PA = config.peripheral_address });
             ma_reg.modify(.{ .M0A = memory_address });
             ndtr_reg.modify(.{ .NDT = number_of_data_items });
 
             cr_reg.modify(.{ .EN = 1 }); // enable stream
-            return true;
         }
 
-        pub fn enabled() bool {
-            return cr_reg.read().EN == 1;
-        }
-
+        // ready to start
         pub fn ready() bool {
             return if (enabled()) complete() else true;
+        }
+
+        fn enabled() bool {
+            return cr_reg.read().EN == 1;
         }
 
         // read interrupt flag, where flag is TC, HT, TE, DME or FE
@@ -415,17 +382,18 @@ fn DmaRx(comptime config: DmaConfig) type {
             clearIntFlag("FE"); // fifo error
         }
 
+        fn disable() void {
+            cr_reg.modify(.{ .EN = 0 }); // disable stream
+            while (cr_reg.read().EN == 1) {} // wait for disable
+            clearIntFlags();
+        }
+
         pub fn init() void {
             // enable clock
             // regs.RCC.AHB1ENR.modify(.{ .DMAxEN = 1 });
-            regs.RCC.AHB1ENR.set(ctl ++ "EN", 1);
-
-            cr_reg.modify(.{ .EN = 0 }); // disable stream
-            while (cr_reg.read().EN == 1) {} // wait for disable
-
-            clearIntFlags();
-
-            cr_reg.raw = 0;
+            regs.RCC.AHB1ENR.set(config.controller ++ "EN", 1);
+            disable();
+            cr_reg.raw = 0; // reset to defaults
             cr_reg.modify(.{
                 .CHSEL = config.channel, // channel
                 .DIR = @enumToInt(config.direction), // direction
@@ -436,7 +404,7 @@ fn DmaRx(comptime config: DmaConfig) type {
                 .MSIZE = 0b00, // memory data size: byte
                 .TCIE = 1, // transfer complete interrupt enable
             });
-            irq.enable(.dma2_stream5); // TODO
+            irq.enable(config.irqn);
         }
     };
 }
