@@ -17,8 +17,6 @@ pub const Config = struct {
     parity: ?Parity = null,
     data_bits: DataBits = .eight,
 
-    dma_enable: bool = false,
-
     const Self = @This();
 
     fn parity_control_enable(comptime self: Self) u1 {
@@ -75,11 +73,6 @@ pub const StopBits = enum(u2) {
 pub const Parity = enum(u1) {
     even = 0,
     odd = 1,
-};
-
-pub const IrqEnableDisable = enum {
-    enable,
-    disable,
 };
 
 const uart1_data = struct {
@@ -143,27 +136,45 @@ fn UartX(comptime data: type, comptime config: Config) type {
     assertValidPins(data, config.tx, config.rx);
     assertConfig(config);
 
-    const uart = Pooling(data, config);
+    const base = Base(data, config);
+    return struct {
+        pub fn Interrupt() type {
+            return struct {
+                pub fn init() void {
+                    base.init();
+                    base.rx.irq.enable();
+                }
+                pub const tx = base.tx;
+                pub const rx = base.rx;
+            };
+        }
+        pub fn Dma() type {
+            const dmaTx = UartDma(data.dma.tx);
+            const dmaRx = UartDma(data.dma.rx);
 
-    if (config.dma_enable) {
-        const dmaTx = UartDma(data.dma.tx);
-        const dmaRx = UartDma(data.dma.rx);
-
-        return struct {
-            pub fn init() void {
-                _ = uart.init();
-                dmaTx.init();
-                dmaRx.init();
-            }
-            pub const tx = dmaTx;
-            pub const rx = dmaRx;
-        };
-    } else {
-        return Pooling(data, config);
-    }
+            return struct {
+                pub fn init() void {
+                    base.init();
+                    base.initDma();
+                    dmaTx.init();
+                    dmaRx.init();
+                }
+                pub const tx = struct {
+                    pub const write = dmaTx.start;
+                    pub const ready = dmaTx.ready;
+                    pub const irq = dmaTx.irq;
+                };
+                pub const rx = struct {
+                    pub const read = dmaRx.start;
+                    pub const ready = dmaRx.ready;
+                    pub const irq = dmaRx.irq;
+                };
+            };
+        }
+    };
 }
 
-fn Pooling(comptime data: type, comptime config: Config) type {
+fn Base(comptime data: type, comptime config: Config) type {
     const reg = @field(regs, data.name); // regs.USARTx
     const parity_read_mask = config.parity_read_mask();
 
@@ -192,12 +203,6 @@ fn Pooling(comptime data: type, comptime config: Config) type {
                 .RE = config.rx_enable(),
             });
             reg.CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) }); // set number of stop bits
-            if (config.dma_enable) {
-                reg.CR3.modify(.{
-                    .DMAT = 1, // enable dma transmitter
-                    .DMAR = 1, // enable dma receiver
-                });
-            }
 
             // configure gpio pins to required alternate function
             if (config.tx) |pin| { // transmitter
@@ -211,42 +216,65 @@ fn Pooling(comptime data: type, comptime config: Config) type {
             irq.enable(data.irqn);
         }
 
-        pub fn txIrq(v: IrqEnableDisable) void {
-            switch (v) {
-                .enable => reg.CR1.modify(.{ .TXEIE = 1 }),
-                .disable => reg.CR1.modify(.{ .TXEIE = 0 }),
+        fn initDma() void {
+            reg.CR3.modify(.{
+                .DMAT = 1, // enable dma transmitter
+                .DMAR = 1, // enable dma receiver
+            });
+        }
+
+        pub const tx = struct {
+            pub fn ready() bool {
+                return reg.SR.read().TXE == 1; // transmit data register empty
             }
-        }
 
-        pub fn rxIrq(v: IrqEnableDisable) void {
-            switch (v) {
-                .enable => reg.CR1.modify(.{ .RXNEIE = 1 }),
-                .disable => reg.CR1.modify(.{ .RXNEIE = 0 }),
+            pub fn write(ch: u8) void {
+                while (!ready()) {} // wait for Previous transmission
+                tx.irq.enable(); // enable interrupt
+                reg.DR.modify(ch);
             }
-        }
 
-        pub fn txReady() bool {
-            return reg.SR.read().TXE == 1;
-        }
+            pub fn flush() void {
+                while (reg.SR.read().TC == 0) {}
+            }
 
-        pub fn tx(ch: u8) void {
-            while (!txReady()) {} // Wait for Previous transmission
-            reg.DR.modify(ch);
-        }
+            pub const irq = struct {
+                // Raises interrupt whenever TXE == 1.
+                // Interrupt handler should write data or disable interrupt if there is no data to send.
+                // Writing data to DR clears TXE.
+                pub fn enable() void {
+                    reg.CR1.modify(.{ .TXEIE = 1 });
+                }
+                pub fn disable() void {
+                    reg.CR1.modify(.{ .TXEIE = 0 });
+                }
+            };
+        };
 
-        pub fn txflush() void {
-            while (reg.SR.read().TC == 0) {}
-        }
+        pub const rx = struct {
+            pub fn ready() bool {
+                return reg.SR.read().RXNE == 1; // read data register not empty
+            }
 
-        pub fn rxReady() bool {
-            return reg.SR.read().RXNE == 1;
-        }
+            pub fn read() u8 {
+                while (!ready()) {} // wait till the data is received
+                const data_with_parity_bit: u9 = reg.DR.read();
+                return @intCast(u8, data_with_parity_bit & parity_read_mask);
+            }
 
-        pub fn rx() u8 {
-            while (!rxReady()) {} // Wait till the data is received
-            const data_with_parity_bit: u9 = reg.DR.read();
-            return @intCast(u8, data_with_parity_bit & parity_read_mask);
-        }
+            pub const irq = struct {
+                // Raises interrupt when read data register is not empty = when there is byte to read.
+                // Reading from DR register clears RXNE flag.
+                // So there is no need to disable interrupt just read incomming data in irq handler.
+                // Interrupt is by default enabled.
+                pub fn enable() void {
+                    reg.CR1.modify(.{ .RXNEIE = 1 });
+                }
+                pub fn disable() void {
+                    reg.CR1.modify(.{ .RXNEIE = 0 });
+                }
+            };
+        };
     };
 }
 
@@ -318,6 +346,8 @@ const DmaDirection = enum(u2) {
     memory_to_peripheral = 0b01,
 };
 
+const iirq = irq;
+
 fn UartDma(comptime config: DmaConfig) type {
     const stream = std.fmt.comptimePrint("{d}", .{config.stream}); // to string
     const base = @field(regs, config.controller); // regs.DMAx
@@ -337,11 +367,16 @@ fn UartDma(comptime config: DmaConfig) type {
             return readIntFlag("TC");
         }
 
-        // if not cleared interrupt will be raised again
-        // no need to clear if start will be called, start is clearing all flags
-        pub fn clearComplete() void {
-            clearIntFlag("TC");
-        }
+        const Self = @This();
+
+        pub const irq = struct {
+            pub fn enable() void {
+                cr_reg.modify(.{ .TCIE = 1 }); // transfer complete interrupt enable
+            }
+            pub fn disable() void {
+                cr_reg.modify(.{ .TCIE = 0 });
+            }
+        };
 
         pub fn start(buf: []u8) void {
             const memory_address = @ptrToInt(&buf[0]);
@@ -351,6 +386,7 @@ fn UartDma(comptime config: DmaConfig) type {
             pa_reg.modify(.{ .PA = config.peripheral_address });
             ma_reg.modify(.{ .M0A = memory_address });
             ndtr_reg.modify(.{ .NDT = number_of_data_items });
+            Self.irq.enable();
 
             cr_reg.modify(.{ .EN = 1 }); // enable stream
         }
@@ -404,7 +440,7 @@ fn UartDma(comptime config: DmaConfig) type {
                 .MSIZE = 0b00, // memory data size: byte
                 .TCIE = 1, // transfer complete interrupt enable
             });
-            irq.enable(config.irqn);
+            iirq.enable(config.irqn);
         }
     };
 }
