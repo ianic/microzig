@@ -6,12 +6,15 @@ const clk = @import("clock.zig");
 const Frequencies = clk.Frequencies;
 
 pub const Config = struct {
+    // pin definition
     // at least one of this is required
     tx: ?type = null,
     rx: ?type = null,
 
+    // must be set by appliction, needed for usartdiv calculation
     clock_frequencies: Frequencies,
-    // defaults
+
+    // communication params
     baud_rate: u32 = 9600,
     stop_bits: StopBits = .one,
     parity: ?Parity = null,
@@ -19,10 +22,12 @@ pub const Config = struct {
 
     const Self = @This();
 
-    fn parity_control_enable(comptime self: Self) u1 {
+    // calculated parameters for configuring registers
+    //
+    fn parityControlEnable(comptime self: Self) u1 {
         return if (self.parity != null) 1 else 0;
     }
-    fn parity_selection(comptime self: Self) u1 {
+    fn paritySelection(comptime self: Self) u1 {
         return if (self.parity != null) @enumToInt(self.parity) else 0;
     }
     fn wordLength(comptime self: Config) u1 {
@@ -31,19 +36,19 @@ pub const Config = struct {
         // - 1: 1 start bit, 9 data bits (8 data + 1 parity, or 9 data), n stop bits
         return if (self.data_bits == .nine or (self.data_bits == .eight and self.parity != null)) 1 else 0;
     }
-    fn tx_enable(comptime self: Config) u1 {
+    fn txEnable(comptime self: Config) u1 {
         return if (self.tx != null) 1 else 0;
     }
-    fn rx_enable(comptime self: Config) u1 {
+    fn rxEnable(comptime self: Config) u1 {
         return if (self.rx != null) 1 else 0;
     }
-    fn parity_read_mask(comptime self: Config) u8 {
+    fn parityReadMask(comptime self: Config) u8 {
         // m ==1 means 'the 9th bit (not the 8th bit) is the parity bit'.
         // So we always mask away the 9th bit, and if parity is enabled and it is in the 8th bit,
         // then we also mask away the 8th bit.
         return if (self.parity != null and self.wordLength() == 0) 0x7F else 0xFF;
     }
-    fn usartdiv(comptime self: Self, comptime clock_bus: []const u8) u16 {
+    fn usartDiv(comptime self: Self, comptime clock_bus: []const u8) u16 {
         // Despite the reference manual talking about fractional calculation and other buzzwords,
         // it is actually just a simple divider. Just ignore DIV_Mantissa and DIV_Fraction and
         // set the result of the division as the lower 16 bits of BRR.
@@ -118,18 +123,11 @@ test "Config.usartdiv" {
     try std.testing.expectEqual(50_000_000, @field(clk.hsi_100.frequencies, "apb1"));
 
     const cfg1 = Config{ .clock_frequencies = clk.hsi_100.frequencies };
-    try std.testing.expectEqual(cfg1.usartdiv("apb2"), 10416);
-    try std.testing.expectEqual(cfg1.usartdiv("apb1"), 5208);
+    try std.testing.expectEqual(cfg1.usartDiv("apb2"), 10416);
+    try std.testing.expectEqual(cfg1.usartDiv("apb1"), 5208);
 
     const cfg2 = Config{ .baud_rate = 153600, .clock_frequencies = clk.hsi_100.frequencies };
-    try std.testing.expectEqual(cfg2.usartdiv("apb2"), 651);
-}
-
-fn wordLength(comptime config: Config) u1 {
-    // Per the reference manual, M means
-    // - 0: 1 start bit, 8 data bits (7 data + 1 parity, or 8 data), n stop bits, the chip default
-    // - 1: 1 start bit, 9 data bits (8 data + 1 parity, or 9 data), n stop bits
-    return if (config.data_bits == .nine or (config.data_bits == .eight and config.parity != null)) 1 else 0;
+    try std.testing.expectEqual(cfg2.usartDiv("apb2"), 651);
 }
 
 fn UartX(comptime data: type, comptime config: Config) type {
@@ -138,14 +136,30 @@ fn UartX(comptime data: type, comptime config: Config) type {
 
     const base = Base(data, config);
     return struct {
+        pub fn Pooling() type {
+            return struct {
+                pub fn init() void {
+                    base.init();
+                }
+                pub const tx = if (config.tx != null) struct {
+                    pub const ready = base.tx.ready;
+                    pub const write = base.tx.write;
+                    pub const flush = base.tx.flush;
+                } else @compileError("tx not enabled");
+                pub const rx = if (config.rx != null) struct {
+                    pub const ready = base.rx.ready;
+                    pub const read = base.rx.read;
+                } else @compileError("rx not enabled");
+            };
+        }
         pub fn Interrupt() type {
             return struct {
                 pub fn init() void {
                     base.init();
-                    base.rx.irq.enable();
+                    base.initIrq();
                 }
-                pub const tx = base.tx;
-                pub const rx = base.rx;
+                pub const tx = if (config.tx != null) base.tx else @compileError("tx not enabled");
+                pub const rx = if (config.rx != null) base.rx else @compileError("rx not enabled");
             };
         }
         pub fn Dma() type {
@@ -159,16 +173,16 @@ fn UartX(comptime data: type, comptime config: Config) type {
                     dmaTx.init();
                     dmaRx.init();
                 }
-                pub const tx = struct {
+                pub const tx = if (config.tx != null) struct {
                     pub const write = dmaTx.start;
                     pub const ready = dmaTx.ready;
                     pub const irq = dmaTx.irq;
-                };
-                pub const rx = struct {
+                } else @compileError("tx not enabled");
+                pub const rx = if (config.rx != null) struct {
                     pub const read = dmaRx.start;
                     pub const ready = dmaRx.ready;
                     pub const irq = dmaRx.irq;
-                };
+                } else @compileError("tx not enabled");
             };
         }
     };
@@ -176,7 +190,7 @@ fn UartX(comptime data: type, comptime config: Config) type {
 
 fn Base(comptime data: type, comptime config: Config) type {
     const reg = @field(regs, data.name); // regs.USARTx
-    const parity_read_mask = config.parity_read_mask();
+    const parity_read_mask = config.parityReadMask();
 
     return struct {
         pub fn init() void {
@@ -194,13 +208,13 @@ fn Base(comptime data: type, comptime config: Config) type {
             reg.CR2.raw = 0;
             reg.CR3.raw = 0;
 
-            reg.BRR.raw = config.usartdiv(data.clock.bus); // set baud rate
+            reg.BRR.raw = config.usartDiv(data.clock.bus); // set baud rate
             reg.CR1.modify(.{
                 .M = config.wordLength(),
-                .PCE = config.parity_control_enable(),
-                .PS = config.parity_selection(),
-                .TE = config.tx_enable(),
-                .RE = config.rx_enable(),
+                .PCE = config.parityControlEnable(),
+                .PS = config.paritySelection(),
+                .TE = config.txEnable(),
+                .RE = config.rxEnable(),
             });
             reg.CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) }); // set number of stop bits
 
@@ -213,7 +227,11 @@ fn Base(comptime data: type, comptime config: Config) type {
             }
 
             reg.CR1.modify(.{ .UE = 1 }); // enable the USART
+        }
+
+        fn initIrq() void {
             irq.enable(data.irqn);
+            rx.irq.enable();
         }
 
         fn initDma() void {
@@ -230,7 +248,7 @@ fn Base(comptime data: type, comptime config: Config) type {
 
             pub fn write(ch: u8) void {
                 while (!ready()) {} // wait for Previous transmission
-                tx.irq.enable(); // enable interrupt
+                tx.irq.enable(); // enable interrupt TODO this is executed in pooling mode also, no need for that
                 reg.DR.modify(ch);
             }
 
@@ -346,8 +364,6 @@ const DmaDirection = enum(u2) {
     memory_to_peripheral = 0b01,
 };
 
-const iirq = irq;
-
 fn UartDma(comptime config: DmaConfig) type {
     const stream = std.fmt.comptimePrint("{d}", .{config.stream}); // to string
     const base = @field(regs, config.controller); // regs.DMAx
@@ -360,6 +376,7 @@ fn UartDma(comptime config: DmaConfig) type {
     const hl_pre = if (config.stream > 3) "H" else "L"; // high/low interrupt status/flag register preffix
     const st_reg = @field(base, hl_pre ++ "ISR"); // interrupt status register, regs.DMAx.[H/L]ISR
     const fc_reg = @field(base, hl_pre ++ "IFCR"); // interrupt flag clear register, regs.DMAx.[H/L]IFCR
+    const iirq = irq; // just to avoid ambiguous reference in the init fn
 
     return struct {
         // in interrupt handler to test the interrupt reason
