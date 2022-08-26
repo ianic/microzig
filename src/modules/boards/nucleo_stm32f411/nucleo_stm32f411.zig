@@ -1,6 +1,7 @@
 const std = @import("std");
 pub const micro = @import("microzig");
 pub const chip = micro.chip;
+//pub const chip = @import("../../chips/stm32f411/stm32f411re.zig");
 pub const gpio = chip.gpio;
 
 pub const Config = struct {
@@ -33,18 +34,9 @@ pub const hse_frequency = 8_000_000; // 8 MHz
 //
 pub const hse_100 = .{
     .source = .hse,
-    .pll = .{
-        .m = 2,
-        .n = 100,
-        .p = 4,
-        .q = 8,
-    },
+    .pll = .{ .m = 2, .n = 100, .p = 4, .q = 8 },
     .latency = 3,
-    .prescaler = .{
-        .ahb = 1,
-        .apb1 = 2,
-        .apb2 = 1,
-    },
+    .prescaler = .{ .ahb = 1, .apb1 = 2, .apb2 = 1 },
     .frequencies = .{
         .source = hse_frequency,
         .cpu = 100_000_000,
@@ -57,18 +49,9 @@ pub const hse_100 = .{
 
 pub const hse_96 = .{
     .source = .hse,
-    .pll = .{
-        .m = 2,
-        .n = 96,
-        .p = 4,
-        .q = 8,
-    },
+    .pll = .{ .m = 2, .n = 96, .p = 4, .q = 8 },
     .latency = 3,
-    .prescaler = .{
-        .ahb = 1,
-        .apb1 = 2,
-        .apb2 = 1,
-    },
+    .prescaler = .{ .ahb = 1, .apb1 = 2, .apb2 = 1 },
     .frequencies = .{
         .source = hse_frequency,
         .cpu = 96_000_000,
@@ -79,6 +62,9 @@ pub const hse_96 = .{
     },
 };
 
+// TODO how to run tests
+// uncommet chip import by path (and comment previous two lines) and then run this: (ubicusemajkemi)
+// zig test --main-pkg-path ~/code/zig/embeded/nucleo-stm32f411/lib/microzig/src/ nucleo_stm32f411.zig
 test "configs are valid" {
     chip.clk.checkConfig(hse_100);
     chip.clk.checkConfig(hse_96);

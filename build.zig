@@ -28,10 +28,16 @@ pub fn build(b: *std.build.Builder) !void {
         BuildConfig{ .name = "boards.stm32f429idiscovery", .backing = Backing{ .board = boards.stm32f429idiscovery }, .supports_uart_test = false },
         BuildConfig{ .name = "chips.gd32vf103x8", .backing = Backing{ .chip = chips.gd32vf103x8 } },
         BuildConfig{ .name = "boards.longan_nano", .backing = Backing{ .board = boards.longan_nano } },
-        BuildConfig{ .name = "boards.blackpill411", .backing = Backing{ .board = boards.blackpill411 } },
+        //BuildConfig{ .name = "boards.blackpill411", .backing = Backing{ .board = boards.blackpill411 } },
     };
 
-    const Test = struct { name: []const u8, source: []const u8, uses_uart: bool = false, on_riscv32: bool = true, on_avr: bool = true };
+    const Test = struct {
+        name: []const u8,
+        source: []const u8,
+        uses_uart: bool = false,
+        on_riscv32: bool = true,
+        on_avr: bool = true,
+    };
     const all_tests = [_]Test{
         Test{ .name = "minimal", .source = "tests/minimal.zig" },
         Test{ .name = "blinky", .source = "tests/blinky.zig" },
@@ -73,22 +79,28 @@ pub fn build(b: *std.build.Builder) !void {
         }
     }
 
-    // blackpill experiments
-    const bp_exe = try microzig.addEmbeddedExecutable(
-        b,
-        "test-blackpill.elf",
-        "tests/blackpill.zig",
-        //.{ .chip = microzig.chips.stm32f411ce },
-        .{ .board = microzig.boards.blackpill411 },
-        .{},
-    );
-    test_step.dependOn(&bp_exe.step);
-    const bp_bin = b.addInstallRaw(
-        bp_exe,
-        "test-blackpill.bin",
-        .{},
-    );
-    b.getInstallStep().dependOn(&bp_bin.step);
+    const nucleo_tests = b.addTest("src/modules/boards/nucleo_stm32f411/nucleo_stm32f411.zig");
+    nucleo_tests.addPackagePath("microzig", "./src/main.zig");
+    nucleo_tests.setBuildMode(mode);
+    test_step.dependOn(&nucleo_tests.step);
+
+    // // blackpill experiments
+    // const bp_exe = try microzig.addEmbeddedExecutable(
+    //     b,
+    //     "test-blackpill.elf",
+    //     "tests/blackpill.zig",
+    //     //.{ .chip = microzig.chips.stm32f411ce },
+    //     .{ .board = microzig.boards.blackpill411 },
+    //     .{},
+    // );
+    // test_step.dependOn(&bp_exe.step);
+    // const bp_bin = b.addInstallRaw(
+    //     bp_exe,
+    //     "test-blackpill.bin",
+    //     .{},
+    // );
+    // b.getInstallStep().dependOn(&bp_bin.step);
+    //
 }
 
 pub fn srcDir() []const u8 {
