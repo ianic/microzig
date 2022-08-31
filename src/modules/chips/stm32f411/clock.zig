@@ -1,7 +1,8 @@
 // Ref:
 // inspired and started as as a copy of: https://github.com/rbino/zig-stm32-blink
 
-const regs = @import("registers.zig").registers;
+const micro = @import("microzig");
+const regs = micro.chip.regs;
 
 // Provide chip frequencies to customize init and checkConfig for that chip.
 pub fn Chip(comptime chip_frequencies: type) type {

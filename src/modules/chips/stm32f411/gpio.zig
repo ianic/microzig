@@ -1,100 +1,7 @@
 const std = @import("std");
-const regs = @import("registers.zig").registers;
-const irq = @import("irq.zig");
-
-// Definition of available pins for stm32f411.
-// From "RM0383 Rev 3" page 145:
-//   "GPIO F/G/H/I/J/K (except GPIOH0 and GPIOH1) are not available in STM32F411xC/E."
-//
-// Example usage:
-// pub const gpio = chip.gpio;
-// ...
-// pub const led = gpio.PA5.Output(.{});
-// pub const button = gpio.PC13.Input(.{ .irq_enable = true });
-//
-pub const PA0 = Pin("PA0");
-pub const PA1 = Pin("PA1");
-pub const PA2 = Pin("PA2");
-pub const PA3 = Pin("PA3");
-pub const PA4 = Pin("PA4");
-pub const PA5 = Pin("PA5");
-pub const PA6 = Pin("PA6");
-pub const PA7 = Pin("PA7");
-pub const PA8 = Pin("PA8");
-pub const PA9 = Pin("PA9");
-pub const PA10 = Pin("PA10");
-pub const PA11 = Pin("PA11");
-pub const PA12 = Pin("PA12");
-pub const PA13 = Pin("PA13");
-pub const PA14 = Pin("PA14");
-pub const PA15 = Pin("PA15");
-pub const PB0 = Pin("PB0");
-pub const PB1 = Pin("PB1");
-pub const PB2 = Pin("PB2");
-pub const PB3 = Pin("PB3");
-pub const PB4 = Pin("PB4");
-pub const PB5 = Pin("PB5");
-pub const PB6 = Pin("PB6");
-pub const PB7 = Pin("PB7");
-pub const PB8 = Pin("PB8");
-pub const PB9 = Pin("PB9");
-pub const PB10 = Pin("PB10");
-pub const PB11 = Pin("PB11");
-pub const PB12 = Pin("PB12");
-pub const PB13 = Pin("PB13");
-pub const PB14 = Pin("PB14");
-pub const PB15 = Pin("PB15");
-pub const PC0 = Pin("PC0");
-pub const PC1 = Pin("PC1");
-pub const PC2 = Pin("PC2");
-pub const PC3 = Pin("PC3");
-pub const PC4 = Pin("PC4");
-pub const PC5 = Pin("PC5");
-pub const PC6 = Pin("PC6");
-pub const PC7 = Pin("PC7");
-pub const PC8 = Pin("PC8");
-pub const PC9 = Pin("PC9");
-pub const PC10 = Pin("PC10");
-pub const PC11 = Pin("PC11");
-pub const PC12 = Pin("PC12");
-pub const PC13 = Pin("PC13");
-pub const PC14 = Pin("PC14");
-pub const PC15 = Pin("PC15");
-pub const PD0 = Pin("PD0");
-pub const PD1 = Pin("PD1");
-pub const PD2 = Pin("PD2");
-pub const PD3 = Pin("PD3");
-pub const PD4 = Pin("PD4");
-pub const PD5 = Pin("PD5");
-pub const PD6 = Pin("PD6");
-pub const PD7 = Pin("PD7");
-pub const PD8 = Pin("PD8");
-pub const PD9 = Pin("PD9");
-pub const PD10 = Pin("PD10");
-pub const PD11 = Pin("PD11");
-pub const PD12 = Pin("PD12");
-pub const PD13 = Pin("PD13");
-pub const PD14 = Pin("PD14");
-pub const PD15 = Pin("PD15");
-pub const PE0 = Pin("PE0");
-pub const PE1 = Pin("PE1");
-pub const PE2 = Pin("PE2");
-pub const PE3 = Pin("PE3");
-pub const PE4 = Pin("PE4");
-pub const PE5 = Pin("PE5");
-pub const PE6 = Pin("PE6");
-pub const PE7 = Pin("PE7");
-pub const PE8 = Pin("PE8");
-pub const PE9 = Pin("PE9");
-pub const PE10 = Pin("PE10");
-pub const PE11 = Pin("PE11");
-pub const PE12 = Pin("PE12");
-pub const PE13 = Pin("PE13");
-pub const PE14 = Pin("PE14");
-pub const PE15 = Pin("PE15");
-pub const PH0 = Pin("PH0");
-pub const PH1 = Pin("PH1");
-pub const PH2 = Pin("PH2");
+const micro = @import("microzig");
+const chip = micro.chip;
+const regs = chip.regs;
 
 pub const InputConfig = struct {
     pull: Pull = .none,
@@ -199,7 +106,7 @@ fn ParsedPin(comptime spec: []const u8) type {
 }
 
 // spec is pin name e.g. "PA0", "PA1"...
-fn Pin(comptime spec: []const u8) type {
+pub fn Pin(comptime spec: []const u8) type {
     const pp = ParsedPin(spec);
     return struct {
         pub fn Input(comptime c: InputConfig) type {
@@ -272,10 +179,10 @@ fn Pin(comptime spec: []const u8) type {
 
 // exti interrupt enabling for pin
 fn Exti(comptime pp: anytype) type {
-    const irqn = switch (pp.pin_number) {
-        10...15 => .exti15_10,
-        5...9 => .exti9_5,
-        else => @intToEnum(irq.Irq, pp.pin_number + 6),
+    const irq = switch (pp.pin_number) {
+        10...15 => chip.Irq.exti15_10,
+        5...9 => chip.Irq.exti9_5,
+        else => @intToEnum(chip.irq, pp.pin_number + 6),
     };
     return struct {
         pub fn enable(trigger: IrqTrigger) void {
@@ -293,12 +200,12 @@ fn Exti(comptime pp: anytype) type {
             }
             regs.EXTI.IMR.set("MR" ++ pp.suffix, 1); // regs.EXTI.IMR.modify(.{ .MR[suffix] = 1 });
 
-            irq.enable(irqn);
+            irq.enable();
         }
 
         // regs.NVIC.IPR[x].modify(.{ .IPR_N[y] = value });
         pub fn setPriority(pri: u4) void {
-            irq.setPriority(irqn, pri);
+            irq.setPriority(pri);
         }
 
         // get and clear pending exti interrupt
@@ -317,7 +224,7 @@ fn Exti(comptime pp: anytype) type {
     };
 }
 
-test "irq params" {
+test "ParsedPin" {
     const pp = ParsedPin("PC13");
     try std.testing.expectEqual(4, pp.pin_number / 4 + 1);
     try std.testing.expectEqual(2, pp.port_number);

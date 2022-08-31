@@ -1,8 +1,8 @@
 const std = @import("std");
-const regs = @import("registers.zig").registers;
-const Pin = @import("stm32f411.zig").Pin;
-const gpio = @import("gpio.zig");
-const irq = @import("irq.zig");
+const micro = @import("microzig");
+const chip = micro.chip;
+const regs = chip.regs;
+const gpio = chip.gpio;
 
 pub const Config = struct {
     irq_enable: bool = true, // enable rising adc interrupt on each conversion
@@ -42,7 +42,7 @@ fn adc_init(cfg: Config) void {
 
     if (cfg.irq_enable) {
         regs.ADC1.CR1.modify(.{ .EOCIE = 1 }); // enable interrupt
-        irq.enable(.adc);
+        chip.Irq.adc.enable();
     }
 
     regs.ADC1.SR.modify(.{ .EOC = 0, .OVR = 0, .STRT = 0 }); // clear status register
@@ -215,6 +215,9 @@ pub const Input = enum(u5) {
 // use temperature sensor calibration values
 // to convert temprature value to celsius
 pub fn tempValueToC(x: u16) f32 {
+    if (ts.slope == 0) {
+        ts.init();
+    }
     return ts.slope * @intToFloat(f32, x) + ts.intercept;
 }
 
