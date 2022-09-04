@@ -9,17 +9,22 @@ pub const Config = struct {
     button_enable: bool = true,
 };
 
-pub fn init(cfg: Config) void {
-    if (cfg.led_enable) {
-        led.init();
-    }
-    if (cfg.button_enable) {
-        button.init();
-    }
-}
+//pub fn init(cfg: Config) void {
+// if (cfg.led_enable) {
+//     led = Led.init(.{});
+//     //led.init();
+// }
+// if (cfg.button_enable) {
+//     button.init();
+// }
+//}
 
-pub const led = gpio.PA5.Output(.{});
-pub const button = gpio.PC13.Input(.{ .irq_enable = true });
+//pub const led = gpio.PA5.Output(.{});
+pub const Led = gpio.pa5.Output();
+pub const Button = gpio.pc13.Input();
+
+//pub var led: Led = undefined;
+//pub const button = gpio.PC13.Input(.{ .irq_enable = true });
 
 // this board uses crystal oscilator from st-link part of the board for hse
 pub const hse_frequency = 8_000_000; // 8 MHz
