@@ -196,10 +196,10 @@ fn Base(comptime data: type, comptime config: Config, comptime freq: u32) type {
 
             // configure gpio pins to required alternate function
             if (config.tx) |pin| { // transmitter
-                pin.init();
+                pin.init(.{});
             }
             if (config.rx) |pin| { // receiver
-                pin.init();
+                pin.init(.{});
             }
 
             reg.CR1.modify(.{ .UE = 1 }); // enable the USART

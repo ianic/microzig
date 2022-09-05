@@ -1,8 +1,8 @@
-const Pin2 = @import("gpio.zig").Pin2;
+const Pin = @import("gpio.zig").Pin;
 
 pub const gpio = struct {
     pub const pa0 = struct {
-        const pin = Pin2("PA0");
+        const pin = Pin("PA0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -29,7 +29,7 @@ pub const gpio = struct {
         };
     };
     pub const pa1 = struct {
-        const pin = Pin2("PA1");
+        const pin = Pin("PA1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -58,7 +58,7 @@ pub const gpio = struct {
         };
     };
     pub const pa2 = struct {
-        const pin = Pin2("PA2");
+        const pin = Pin("PA2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -87,7 +87,7 @@ pub const gpio = struct {
         };
     };
     pub const pa3 = struct {
-        const pin = Pin2("PA3");
+        const pin = Pin("PA3");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -116,7 +116,7 @@ pub const gpio = struct {
         };
     };
     pub const pa4 = struct {
-        const pin = Pin2("PA4");
+        const pin = Pin("PA4");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -140,7 +140,7 @@ pub const gpio = struct {
         };
     };
     pub const pa5 = struct {
-        const pin = Pin2("PA5");
+        const pin = Pin("PA5");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -162,7 +162,7 @@ pub const gpio = struct {
         };
     };
     pub const pa6 = struct {
-        const pin = Pin2("PA6");
+        const pin = Pin("PA6");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -191,7 +191,7 @@ pub const gpio = struct {
         };
     };
     pub const pa7 = struct {
-        const pin = Pin2("PA7");
+        const pin = Pin("PA7");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -215,7 +215,7 @@ pub const gpio = struct {
         };
     };
     pub const pa8 = struct {
-        const pin = Pin2("PA8");
+        const pin = Pin("PA8");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -251,7 +251,7 @@ pub const gpio = struct {
         };
     };
     pub const pa9 = struct {
-        const pin = Pin2("PA9");
+        const pin = Pin("PA9");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -282,7 +282,7 @@ pub const gpio = struct {
         };
     };
     pub const pa10 = struct {
-        const pin = Pin2("PA10");
+        const pin = Pin("PA10");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -308,7 +308,7 @@ pub const gpio = struct {
         };
     };
     pub const pa11 = struct {
-        const pin = Pin2("PA11");
+        const pin = Pin("PA11");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -339,7 +339,7 @@ pub const gpio = struct {
         };
     };
     pub const pa12 = struct {
-        const pin = Pin2("PA12");
+        const pin = Pin("PA12");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -370,19 +370,19 @@ pub const gpio = struct {
         };
     };
     pub const pa13 = struct {
-        const pin = Pin2("PA13");
+        const pin = Pin("PA13");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
     };
     pub const pa14 = struct {
-        const pin = Pin2("PA14");
+        const pin = Pin("PA14");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
     };
     pub const pa15 = struct {
-        const pin = Pin2("PA15");
+        const pin = Pin("PA15");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -411,7 +411,7 @@ pub const gpio = struct {
         };
     };
     pub const pb0 = struct {
-        const pin = Pin2("PB0");
+        const pin = Pin("PB0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -435,7 +435,7 @@ pub const gpio = struct {
         };
     };
     pub const pb1 = struct {
-        const pin = Pin2("PB1");
+        const pin = Pin("PB1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -459,13 +459,13 @@ pub const gpio = struct {
         };
     };
     pub const pb2 = struct {
-        const pin = Pin2("PB2");
+        const pin = Pin("PB2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
     };
     pub const pb3 = struct {
-        const pin = Pin2("PB3");
+        const pin = Pin("PB3");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -496,7 +496,7 @@ pub const gpio = struct {
         };
     };
     pub const pb4 = struct {
-        const pin = Pin2("PB4");
+        const pin = Pin("PB4");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -527,7 +527,7 @@ pub const gpio = struct {
         };
     };
     pub const pb5 = struct {
-        const pin = Pin2("PB5");
+        const pin = Pin("PB5");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -558,7 +558,7 @@ pub const gpio = struct {
         };
     };
     pub const pb6 = struct {
-        const pin = Pin2("PB6");
+        const pin = Pin("PB6");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -579,7 +579,7 @@ pub const gpio = struct {
         };
     };
     pub const pb7 = struct {
-        const pin = Pin2("PB7");
+        const pin = Pin("PB7");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -605,7 +605,7 @@ pub const gpio = struct {
         };
     };
     pub const pb8 = struct {
-        const pin = Pin2("PB8");
+        const pin = Pin("PB8");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -641,7 +641,7 @@ pub const gpio = struct {
         };
     };
     pub const pb9 = struct {
-        const pin = Pin2("PB9");
+        const pin = Pin("PB9");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -677,7 +677,7 @@ pub const gpio = struct {
         };
     };
     pub const pb10 = struct {
-        const pin = Pin2("PB10");
+        const pin = Pin("PB10");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -703,7 +703,7 @@ pub const gpio = struct {
         };
     };
     pub const pb12 = struct {
-        const pin = Pin2("PB12");
+        const pin = Pin("PB12");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -734,7 +734,7 @@ pub const gpio = struct {
         };
     };
     pub const pb13 = struct {
-        const pin = Pin2("PB13");
+        const pin = Pin("PB13");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -755,7 +755,7 @@ pub const gpio = struct {
         };
     };
     pub const pb14 = struct {
-        const pin = Pin2("PB14");
+        const pin = Pin("PB14");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -776,7 +776,7 @@ pub const gpio = struct {
         };
     };
     pub const pb15 = struct {
-        const pin = Pin2("PB15");
+        const pin = Pin("PB15");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -802,7 +802,7 @@ pub const gpio = struct {
         };
     };
     pub const pc0 = struct {
-        const pin = Pin2("PC0");
+        const pin = Pin("PC0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -811,7 +811,7 @@ pub const gpio = struct {
         };
     };
     pub const pc1 = struct {
-        const pin = Pin2("PC1");
+        const pin = Pin("PC1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -820,7 +820,7 @@ pub const gpio = struct {
         };
     };
     pub const pc2 = struct {
-        const pin = Pin2("PC2");
+        const pin = Pin("PC2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -834,7 +834,7 @@ pub const gpio = struct {
         };
     };
     pub const pc3 = struct {
-        const pin = Pin2("PC3");
+        const pin = Pin("PC3");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -848,7 +848,7 @@ pub const gpio = struct {
         };
     };
     pub const pc4 = struct {
-        const pin = Pin2("PC4");
+        const pin = Pin("PC4");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -857,7 +857,7 @@ pub const gpio = struct {
         };
     };
     pub const pc5 = struct {
-        const pin = Pin2("PC5");
+        const pin = Pin("PC5");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -866,7 +866,7 @@ pub const gpio = struct {
         };
     };
     pub const pc6 = struct {
-        const pin = Pin2("PC6");
+        const pin = Pin("PC6");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -887,7 +887,7 @@ pub const gpio = struct {
         };
     };
     pub const pc7 = struct {
-        const pin = Pin2("PC7");
+        const pin = Pin("PC7");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -913,7 +913,7 @@ pub const gpio = struct {
         };
     };
     pub const pc8 = struct {
-        const pin = Pin2("PC8");
+        const pin = Pin("PC8");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -934,7 +934,7 @@ pub const gpio = struct {
         };
     };
     pub const pc9 = struct {
-        const pin = Pin2("PC9");
+        const pin = Pin("PC9");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -960,7 +960,7 @@ pub const gpio = struct {
         };
     };
     pub const pc10 = struct {
-        const pin = Pin2("PC10");
+        const pin = Pin("PC10");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -976,7 +976,7 @@ pub const gpio = struct {
         };
     };
     pub const pc11 = struct {
-        const pin = Pin2("PC11");
+        const pin = Pin("PC11");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -992,7 +992,7 @@ pub const gpio = struct {
         };
     };
     pub const pc12 = struct {
-        const pin = Pin2("PC12");
+        const pin = Pin("PC12");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -1008,7 +1008,7 @@ pub const gpio = struct {
         };
     };
     pub const pc13 = struct {
-        const pin = Pin2("PC13");
+        const pin = Pin("PC13");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -1017,7 +1017,7 @@ pub const gpio = struct {
         };
     };
     pub const pc14 = struct {
-        const pin = Pin2("PC14");
+        const pin = Pin("PC14");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -1026,7 +1026,7 @@ pub const gpio = struct {
         };
     };
     pub const pc15 = struct {
-        const pin = Pin2("PC15");
+        const pin = Pin("PC15");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -1035,7 +1035,7 @@ pub const gpio = struct {
         };
     };
     pub const pd2 = struct {
-        const pin = Pin2("PD2");
+        const pin = Pin("PD2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -1051,7 +1051,7 @@ pub const gpio = struct {
         };
     };
     pub const ph0 = struct {
-        const pin = Pin2("PH0");
+        const pin = Pin("PH0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
@@ -1060,7 +1060,7 @@ pub const gpio = struct {
         };
     };
     pub const ph1 = struct {
-        const pin = Pin2("PH1");
+        const pin = Pin("PH1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
         pub const Analog = pin.Analog;
