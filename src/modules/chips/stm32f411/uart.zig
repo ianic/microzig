@@ -49,10 +49,10 @@ pub const Config = struct {
         return self.enable == .both or self.enable == .rx_only;
     }
     fn te(comptime self: Self) u1 {
-        if (self.enable == .both or self.enable == .tx_only) return 1 else 0;
+        return if (self.enable == .both or self.enable == .tx_only) return 1 else 0;
     }
     fn re(comptime self: Self) u1 {
-        if (self.enable == .both or self.enable == .rx_only) return 1 else 0;
+        return if (self.enable == .both or self.enable == .rx_only) return 1 else 0;
     }
 };
 
@@ -106,7 +106,7 @@ pub fn UartX(comptime data: type, comptime config: Config) type {
 
     const base = Base(data, config);
     return struct {
-        pub fn Pooling() type {
+        pub fn pooling() type {
             return struct {
                 pub fn init(frequencies: anytype) void {
                     base.init(frequencies);
@@ -122,7 +122,36 @@ pub fn UartX(comptime data: type, comptime config: Config) type {
                 } else @compileError("rx not enabled");
             };
         }
-        pub fn Interrupt() type {
+        pub fn Pooling() type {
+            return struct {
+                const Tx = if (config.txEnable()) struct {
+                    pub fn ready(_: Tx) bool {
+                        return base.tx.ready();
+                    }
+                    pub fn write(_: Tx, b: u8) void {
+                        return base.tx.write(b);
+                    }
+                } else struct {};
+                const Rx = if (config.rxEnable()) struct {
+                    pub fn ready(_: Rx) bool {
+                        return base.rx.ready();
+                    }
+                    pub fn read(_: Rx) u8 {
+                        return base.rx.read();
+                    }
+                } else struct {};
+
+                tx: Tx = .{},
+                rx: Rx = .{},
+
+                const Self = @This();
+                pub fn init(frequencies: anytype) Self {
+                    base.init(frequencies);
+                    return .{};
+                }
+            };
+        }
+        pub fn interrupt() type {
             return struct {
                 pub fn init(frequencies: anytype) void {
                     base.init(frequencies);
@@ -132,7 +161,7 @@ pub fn UartX(comptime data: type, comptime config: Config) type {
                 pub const rx = if (config.rxEnable()) base.rx else @compileError("rx not enabled");
             };
         }
-        pub fn Dma() type {
+        pub fn dma() type {
             const dmaTx = UartDma(.{
                 .controller = data.dma.controller,
                 .stream = data.dma.tx.stream,
