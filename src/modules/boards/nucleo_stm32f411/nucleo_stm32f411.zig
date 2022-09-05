@@ -3,8 +3,8 @@ pub const micro = @import("microzig");
 pub const chip = micro.chip;
 pub const gpio = chip.gpio;
 
-pub const Led = gpio.pa5.Output();
-pub const Button = gpio.pc13.Input();
+pub const led = gpio.pa5.Output();
+pub const button = gpio.pc13.Input();
 
 // this board uses crystal oscilator from st-link part of the board for hse
 pub const hse_frequency = 8_000_000; // 8 MHz

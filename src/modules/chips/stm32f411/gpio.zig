@@ -177,6 +177,23 @@ pub fn Pin(comptime pin_name: []const u8) type {
         pub fn Input() type {
             const exti = Exti(pin);
             return struct {
+                pub fn init(c: InputConfig) void {
+                    pin.initClock();
+                    pin.initInput(c);
+                    if (c.exti.enable) {
+                        exti.enable(c.exti.trigger);
+                        exti.setPriority(c.exti.priority);
+                    }
+                }
+                pub const read = pin.read;
+                pub const exti = exti;
+                pub const extiPending = exti.pending;
+            };
+        }
+
+        pub fn InputInstance() type {
+            const exti = Exti(pin);
+            return struct {
                 const Self = @This();
                 pub fn init(c: InputConfig) Self {
                     pin.initClock();
@@ -196,30 +213,30 @@ pub fn Pin(comptime pin_name: []const u8) type {
 
         pub fn Output() type {
             return struct {
-                const Self = @This();
-                pub fn init(c: OutputConfig) Self {
+                pub fn init(c: OutputConfig) void {
                     pin.initClock();
                     pin.initOutput(c);
-                    return .{};
                 }
-                pub fn setToHigh(_: Self) void {
+                pub fn setToHigh() void {
                     pin.write(1);
                 }
-                pub fn setToLow(_: Self) void {
+                pub fn setToLow() void {
                     pin.write(0);
                 }
-                pub fn toggle(_: Self) void {
+                pub fn toggle() void {
                     switch (pin.read()) {
                         1 => pin.write(0),
                         0 => pin.write(1),
                     }
                 }
-                pub fn on(_: Self) void {
+                pub fn on() void {
                     pin.write(1);
                 }
-                pub fn off(_: Self) void {
+                pub fn off() void {
                     pin.write(0);
                 }
+                pub const read = pin.read;
+                pub const write = pin.write;
             };
         }
 
@@ -230,6 +247,15 @@ pub fn Pin(comptime pin_name: []const u8) type {
                     pin.initAlternateFunction(af, c);
                 }
             };
+        }
+        pub fn function(comptime af: u4, c: FunctionConfig) void {
+            pin.initClock();
+            pin.initAlternateFunction(af, c);
+        }
+
+        pub fn analog() void {
+            pin.initClock();
+            pin.initMode(.analog, .none);
         }
         pub fn Analog() type {
             return struct {

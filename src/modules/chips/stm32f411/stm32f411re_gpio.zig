@@ -1,1507 +1,1507 @@
-const Pin = @import("gpio.zig").Pin;
+const hal = @import("gpio.zig");
 
 pub const gpio = struct {
     pub const pa0 = struct {
-        const pin = Pin("PA0");
+        const pin = hal.Pin("PA0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In0 = pin.Analog;
+            pub const in0 = pin.analog;
         };
         pub const tim2 = struct {
-            pub fn Ch1() type {
-                return pin.Function(1);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
-            pub fn Etr() type {
-                return pin.Function(1);
+            pub fn etr(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim5 = struct {
-            pub fn Ch1() type {
-                return pin.Function(2);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const usart2 = struct {
-            pub fn Cts() type {
-                return pin.Function(7);
+            pub fn cts(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pa1 = struct {
-        const pin = Pin("PA1");
+        const pin = hal.Pin("PA1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In1 = pin.Analog;
+            pub const in1 = pin.analog;
         };
         pub const spi4 = struct {
-            pub fn Mosi() type {
-                return pin.Function(5);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim2 = struct {
-            pub fn Ch2() type {
-                return pin.Function(1);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim5 = struct {
-            pub fn Ch2() type {
-                return pin.Function(2);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const usart2 = struct {
-            pub fn Rts() type {
-                return pin.Function(7);
+            pub fn rts(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pa2 = struct {
-        const pin = Pin("PA2");
+        const pin = hal.Pin("PA2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In2 = pin.Analog;
+            pub const in2 = pin.analog;
         };
         pub const tim2 = struct {
-            pub fn Ch3() type {
-                return pin.Function(1);
+            pub fn ch3(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim5 = struct {
-            pub fn Ch3() type {
-                return pin.Function(2);
+            pub fn ch3(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const tim9 = struct {
-            pub fn Ch1() type {
-                return pin.Function(3);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(3).init(c);
             }
         };
         pub const usart2 = struct {
-            pub fn Tx() type {
-                return pin.Function(7);
+            pub fn tx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pa3 = struct {
-        const pin = Pin("PA3");
+        const pin = hal.Pin("PA3");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In3 = pin.Analog;
+            pub const in3 = pin.analog;
         };
         pub const tim2 = struct {
-            pub fn Ch4() type {
-                return pin.Function(1);
+            pub fn ch4(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim5 = struct {
-            pub fn Ch4() type {
-                return pin.Function(2);
+            pub fn ch4(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const tim9 = struct {
-            pub fn Ch2() type {
-                return pin.Function(3);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(3).init(c);
             }
         };
         pub const usart2 = struct {
-            pub fn Rx() type {
-                return pin.Function(7);
+            pub fn rx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pa4 = struct {
-        const pin = Pin("PA4");
+        const pin = hal.Pin("PA4");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In4 = pin.Analog;
+            pub const in4 = pin.analog;
         };
         pub const spi1 = struct {
-            pub fn Nss() type {
-                return pin.Function(5);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Nss() type {
-                return pin.Function(6);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const usart2 = struct {
-            pub fn Ck() type {
-                return pin.Function(7);
+            pub fn ck(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pa5 = struct {
-        const pin = Pin("PA5");
+        const pin = hal.Pin("PA5");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In5 = pin.Analog;
+            pub const in5 = pin.analog;
         };
         pub const spi1 = struct {
-            pub fn Sck() type {
-                return pin.Function(5);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim2 = struct {
-            pub fn Ch1() type {
-                return pin.Function(1);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
-            pub fn Etr() type {
-                return pin.Function(1);
+            pub fn etr(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
     };
     pub const pa6 = struct {
-        const pin = Pin("PA6");
+        const pin = hal.Pin("PA6");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In6 = pin.Analog;
+            pub const in6 = pin.analog;
         };
         pub const sdio = struct {
-            pub fn Cmd() type {
-                return pin.Function(12);
+            pub fn cmd(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi1 = struct {
-            pub fn Miso() type {
-                return pin.Function(5);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Bkin() type {
-                return pin.Function(1);
+            pub fn bkin(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch1() type {
-                return pin.Function(2);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pa7 = struct {
-        const pin = Pin("PA7");
+        const pin = hal.Pin("PA7");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In7 = pin.Analog;
+            pub const in7 = pin.analog;
         };
         pub const spi1 = struct {
-            pub fn Mosi() type {
-                return pin.Function(5);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch1n() type {
-                return pin.Function(1);
+            pub fn ch1n(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch2() type {
-                return pin.Function(2);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pa8 = struct {
-        const pin = Pin("PA8");
+        const pin = hal.Pin("PA8");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c3 = struct {
-            pub fn Scl() type {
-                return pin.Function(4);
+            pub fn scl(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const rcc = struct {
-            pub fn Mco1() type {
-                return pin.Function(0);
+            pub fn mco_1(c: hal.FunctionConfig) void {
+                pin.Function(0).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D1() type {
-                return pin.Function(12);
+            pub fn d1(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch1() type {
-                return pin.Function(1);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Ck() type {
-                return pin.Function(7);
+            pub fn ck(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
         pub const usb_otg_fs = struct {
-            pub fn Sof() type {
-                return pin.Function(10);
+            pub fn sof(c: hal.FunctionConfig) void {
+                pin.Function(10).init(c);
             }
         };
     };
     pub const pa9 = struct {
-        const pin = Pin("PA9");
+        const pin = hal.Pin("PA9");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c3 = struct {
-            pub fn Smba() type {
-                return pin.Function(4);
+            pub fn smba(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D2() type {
-                return pin.Function(12);
+            pub fn d2(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch2() type {
-                return pin.Function(1);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Tx() type {
-                return pin.Function(7);
+            pub fn tx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
         pub const usb_otg_fs = struct {
-            pub fn Vbus() type {
-                return pin.Function(10);
+            pub fn vbus(c: hal.FunctionConfig) void {
+                pin.Function(10).init(c);
             }
         };
     };
     pub const pa10 = struct {
-        const pin = Pin("PA10");
+        const pin = hal.Pin("PA10");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const spi5 = struct {
-            pub fn Mosi() type {
-                return pin.Function(6);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch3() type {
-                return pin.Function(1);
+            pub fn ch3(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Rx() type {
-                return pin.Function(7);
+            pub fn rx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
         pub const usb_otg_fs = struct {
-            pub fn Id() type {
-                return pin.Function(10);
+            pub fn id(c: hal.FunctionConfig) void {
+                pin.Function(10).init(c);
             }
         };
     };
     pub const pa11 = struct {
-        const pin = Pin("PA11");
+        const pin = hal.Pin("PA11");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const spi4 = struct {
-            pub fn Miso() type {
-                return pin.Function(6);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch4() type {
-                return pin.Function(1);
+            pub fn ch4(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Cts() type {
-                return pin.Function(7);
+            pub fn cts(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
         pub const usart6 = struct {
-            pub fn Tx() type {
-                return pin.Function(8);
+            pub fn tx(c: hal.FunctionConfig) void {
+                pin.Function(8).init(c);
             }
         };
         pub const usb_otg_fs = struct {
-            pub fn Dm() type {
-                return pin.Function(10);
+            pub fn dm(c: hal.FunctionConfig) void {
+                pin.Function(10).init(c);
             }
         };
     };
     pub const pa12 = struct {
-        const pin = Pin("PA12");
+        const pin = hal.Pin("PA12");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const spi5 = struct {
-            pub fn Miso() type {
-                return pin.Function(6);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Etr() type {
-                return pin.Function(1);
+            pub fn etr(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Rts() type {
-                return pin.Function(7);
+            pub fn rts(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
         pub const usart6 = struct {
-            pub fn Rx() type {
-                return pin.Function(8);
+            pub fn rx(c: hal.FunctionConfig) void {
+                pin.Function(8).init(c);
             }
         };
         pub const usb_otg_fs = struct {
-            pub fn Dp() type {
-                return pin.Function(10);
+            pub fn dp(c: hal.FunctionConfig) void {
+                pin.Function(10).init(c);
             }
         };
     };
     pub const pa13 = struct {
-        const pin = Pin("PA13");
+        const pin = hal.Pin("PA13");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
     };
     pub const pa14 = struct {
-        const pin = Pin("PA14");
+        const pin = hal.Pin("PA14");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
     };
     pub const pa15 = struct {
-        const pin = Pin("PA15");
+        const pin = hal.Pin("PA15");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const spi1 = struct {
-            pub fn Nss() type {
-                return pin.Function(5);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Nss() type {
-                return pin.Function(6);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim2 = struct {
-            pub fn Ch1() type {
-                return pin.Function(1);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
-            pub fn Etr() type {
-                return pin.Function(1);
+            pub fn etr(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Tx() type {
-                return pin.Function(7);
+            pub fn tx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pb0 = struct {
-        const pin = Pin("PB0");
+        const pin = hal.Pin("PB0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In8 = pin.Analog;
+            pub const in8 = pin.analog;
         };
         pub const spi5 = struct {
-            pub fn Sck() type {
-                return pin.Function(6);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch2n() type {
-                return pin.Function(1);
+            pub fn ch2n(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch3() type {
-                return pin.Function(2);
+            pub fn ch3(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pb1 = struct {
-        const pin = Pin("PB1");
+        const pin = hal.Pin("PB1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In9 = pin.Analog;
+            pub const in9 = pin.analog;
         };
         pub const spi5 = struct {
-            pub fn Nss() type {
-                return pin.Function(6);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch3n() type {
-                return pin.Function(1);
+            pub fn ch3n(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch4() type {
-                return pin.Function(2);
+            pub fn ch4(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pb2 = struct {
-        const pin = Pin("PB2");
+        const pin = hal.Pin("PB2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
     };
     pub const pb3 = struct {
-        const pin = Pin("PB3");
+        const pin = hal.Pin("PB3");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c2 = struct {
-            pub fn Sda() type {
-                return pin.Function(9);
+            pub fn sda(c: hal.FunctionConfig) void {
+                pin.Function(9).init(c);
             }
         };
         pub const spi1 = struct {
-            pub fn Sck() type {
-                return pin.Function(5);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Sck() type {
-                return pin.Function(6);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim2 = struct {
-            pub fn Ch2() type {
-                return pin.Function(1);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Rx() type {
-                return pin.Function(7);
+            pub fn rx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pb4 = struct {
-        const pin = Pin("PB4");
+        const pin = hal.Pin("PB4");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c3 = struct {
-            pub fn Sda() type {
-                return pin.Function(9);
+            pub fn sda(c: hal.FunctionConfig) void {
+                pin.Function(9).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D0() type {
-                return pin.Function(12);
+            pub fn d0(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi1 = struct {
-            pub fn Miso() type {
-                return pin.Function(5);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Miso() type {
-                return pin.Function(6);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch1() type {
-                return pin.Function(2);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pb5 = struct {
-        const pin = Pin("PB5");
+        const pin = hal.Pin("PB5");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c1 = struct {
-            pub fn Smba() type {
-                return pin.Function(4);
+            pub fn smba(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D3() type {
-                return pin.Function(12);
+            pub fn d3(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi1 = struct {
-            pub fn Mosi() type {
-                return pin.Function(5);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Mosi() type {
-                return pin.Function(6);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch2() type {
-                return pin.Function(2);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pb6 = struct {
-        const pin = Pin("PB6");
+        const pin = hal.Pin("PB6");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c1 = struct {
-            pub fn Scl() type {
-                return pin.Function(4);
+            pub fn scl(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const tim4 = struct {
-            pub fn Ch1() type {
-                return pin.Function(2);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Tx() type {
-                return pin.Function(7);
+            pub fn tx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pb7 = struct {
-        const pin = Pin("PB7");
+        const pin = hal.Pin("PB7");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c1 = struct {
-            pub fn Sda() type {
-                return pin.Function(4);
+            pub fn sda(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D0() type {
-                return pin.Function(12);
+            pub fn d0(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const tim4 = struct {
-            pub fn Ch2() type {
-                return pin.Function(2);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const usart1 = struct {
-            pub fn Rx() type {
-                return pin.Function(7);
+            pub fn rx(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
     };
     pub const pb8 = struct {
-        const pin = Pin("PB8");
+        const pin = hal.Pin("PB8");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c1 = struct {
-            pub fn Scl() type {
-                return pin.Function(4);
+            pub fn scl(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const i2c3 = struct {
-            pub fn Sda() type {
-                return pin.Function(9);
+            pub fn sda(c: hal.FunctionConfig) void {
+                pin.Function(9).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D4() type {
-                return pin.Function(12);
+            pub fn d4(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi5 = struct {
-            pub fn Mosi() type {
-                return pin.Function(6);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim10 = struct {
-            pub fn Ch1() type {
-                return pin.Function(3);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(3).init(c);
             }
         };
         pub const tim4 = struct {
-            pub fn Ch3() type {
-                return pin.Function(2);
+            pub fn ch3(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pb9 = struct {
-        const pin = Pin("PB9");
+        const pin = hal.Pin("PB9");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c1 = struct {
-            pub fn Sda() type {
-                return pin.Function(4);
+            pub fn sda(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const i2c2 = struct {
-            pub fn Sda() type {
-                return pin.Function(9);
+            pub fn sda(c: hal.FunctionConfig) void {
+                pin.Function(9).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D5() type {
-                return pin.Function(12);
+            pub fn d5(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi2 = struct {
-            pub fn Nss() type {
-                return pin.Function(5);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim11 = struct {
-            pub fn Ch1() type {
-                return pin.Function(3);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(3).init(c);
             }
         };
         pub const tim4 = struct {
-            pub fn Ch4() type {
-                return pin.Function(2);
+            pub fn ch4(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pb10 = struct {
-        const pin = Pin("PB10");
+        const pin = hal.Pin("PB10");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c2 = struct {
-            pub fn Scl() type {
-                return pin.Function(4);
+            pub fn scl(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D7() type {
-                return pin.Function(12);
+            pub fn d7(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi2 = struct {
-            pub fn Sck() type {
-                return pin.Function(5);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim2 = struct {
-            pub fn Ch3() type {
-                return pin.Function(1);
+            pub fn ch3(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
     };
     pub const pb12 = struct {
-        const pin = Pin("PB12");
+        const pin = hal.Pin("PB12");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c2 = struct {
-            pub fn Smba() type {
-                return pin.Function(4);
+            pub fn smba(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const spi2 = struct {
-            pub fn Nss() type {
-                return pin.Function(5);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Sck() type {
-                return pin.Function(7);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(7).init(c);
             }
         };
         pub const spi4 = struct {
-            pub fn Nss() type {
-                return pin.Function(6);
+            pub fn nss(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Bkin() type {
-                return pin.Function(1);
+            pub fn bkin(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
     };
     pub const pb13 = struct {
-        const pin = Pin("PB13");
+        const pin = hal.Pin("PB13");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const spi2 = struct {
-            pub fn Sck() type {
-                return pin.Function(5);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const spi4 = struct {
-            pub fn Sck() type {
-                return pin.Function(6);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch1n() type {
-                return pin.Function(1);
+            pub fn ch1n(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
     };
     pub const pb14 = struct {
-        const pin = Pin("PB14");
+        const pin = hal.Pin("PB14");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn D6() type {
-                return pin.Function(12);
+            pub fn d6(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi2 = struct {
-            pub fn Miso() type {
-                return pin.Function(5);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch2n() type {
-                return pin.Function(1);
+            pub fn ch2n(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
     };
     pub const pb15 = struct {
-        const pin = Pin("PB15");
+        const pin = hal.Pin("PB15");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const rtc = struct {
-            pub fn Refin() type {
-                return pin.Function(0);
+            pub fn refin(c: hal.FunctionConfig) void {
+                pin.Function(0).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn Ck() type {
-                return pin.Function(12);
+            pub fn ck(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi2 = struct {
-            pub fn Mosi() type {
-                return pin.Function(5);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim1 = struct {
-            pub fn Ch3n() type {
-                return pin.Function(1);
+            pub fn ch3n(c: hal.FunctionConfig) void {
+                pin.Function(1).init(c);
             }
         };
     };
     pub const pc0 = struct {
-        const pin = Pin("PC0");
+        const pin = hal.Pin("PC0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In10 = pin.Analog;
+            pub const in10 = pin.analog;
         };
     };
     pub const pc1 = struct {
-        const pin = Pin("PC1");
+        const pin = hal.Pin("PC1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In11 = pin.Analog;
+            pub const in11 = pin.analog;
         };
     };
     pub const pc2 = struct {
-        const pin = Pin("PC2");
+        const pin = hal.Pin("PC2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In12 = pin.Analog;
+            pub const in12 = pin.analog;
         };
         pub const spi2 = struct {
-            pub fn Miso() type {
-                return pin.Function(5);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
     };
     pub const pc3 = struct {
-        const pin = Pin("PC3");
+        const pin = hal.Pin("PC3");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In13 = pin.Analog;
+            pub const in13 = pin.analog;
         };
         pub const spi2 = struct {
-            pub fn Mosi() type {
-                return pin.Function(5);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
     };
     pub const pc4 = struct {
-        const pin = Pin("PC4");
+        const pin = hal.Pin("PC4");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In14 = pin.Analog;
+            pub const in14 = pin.analog;
         };
     };
     pub const pc5 = struct {
-        const pin = Pin("PC5");
+        const pin = hal.Pin("PC5");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const adc1 = struct {
-            pub const In15 = pin.Analog;
+            pub const in15 = pin.analog;
         };
     };
     pub const pc6 = struct {
-        const pin = Pin("PC6");
+        const pin = hal.Pin("PC6");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn D6() type {
-                return pin.Function(12);
+            pub fn d6(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch1() type {
-                return pin.Function(2);
+            pub fn ch1(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const usart6 = struct {
-            pub fn Tx() type {
-                return pin.Function(8);
+            pub fn tx(c: hal.FunctionConfig) void {
+                pin.Function(8).init(c);
             }
         };
     };
     pub const pc7 = struct {
-        const pin = Pin("PC7");
+        const pin = hal.Pin("PC7");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn D7() type {
-                return pin.Function(12);
+            pub fn d7(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi2 = struct {
-            pub fn Sck() type {
-                return pin.Function(5);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(5).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch2() type {
-                return pin.Function(2);
+            pub fn ch2(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const usart6 = struct {
-            pub fn Rx() type {
-                return pin.Function(8);
+            pub fn rx(c: hal.FunctionConfig) void {
+                pin.Function(8).init(c);
             }
         };
     };
     pub const pc8 = struct {
-        const pin = Pin("PC8");
+        const pin = hal.Pin("PC8");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn D0() type {
-                return pin.Function(12);
+            pub fn d0(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch3() type {
-                return pin.Function(2);
+            pub fn ch3(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
         pub const usart6 = struct {
-            pub fn Ck() type {
-                return pin.Function(8);
+            pub fn ck(c: hal.FunctionConfig) void {
+                pin.Function(8).init(c);
             }
         };
     };
     pub const pc9 = struct {
-        const pin = Pin("PC9");
+        const pin = hal.Pin("PC9");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const i2c3 = struct {
-            pub fn Sda() type {
-                return pin.Function(4);
+            pub fn sda(c: hal.FunctionConfig) void {
+                pin.Function(4).init(c);
             }
         };
         pub const rcc = struct {
-            pub fn Mco2() type {
-                return pin.Function(0);
+            pub fn mco_2(c: hal.FunctionConfig) void {
+                pin.Function(0).init(c);
             }
         };
         pub const sdio = struct {
-            pub fn D1() type {
-                return pin.Function(12);
+            pub fn d1(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Ch4() type {
-                return pin.Function(2);
+            pub fn ch4(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const pc10 = struct {
-        const pin = Pin("PC10");
+        const pin = hal.Pin("PC10");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn D2() type {
-                return pin.Function(12);
+            pub fn d2(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Sck() type {
-                return pin.Function(6);
+            pub fn sck(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
     };
     pub const pc11 = struct {
-        const pin = Pin("PC11");
+        const pin = hal.Pin("PC11");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn D3() type {
-                return pin.Function(12);
+            pub fn d3(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Miso() type {
-                return pin.Function(6);
+            pub fn miso(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
     };
     pub const pc12 = struct {
-        const pin = Pin("PC12");
+        const pin = hal.Pin("PC12");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn Ck() type {
-                return pin.Function(12);
+            pub fn ck(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const spi3 = struct {
-            pub fn Mosi() type {
-                return pin.Function(6);
+            pub fn mosi(c: hal.FunctionConfig) void {
+                pin.Function(6).init(c);
             }
         };
     };
     pub const pc13 = struct {
-        const pin = Pin("PC13");
+        const pin = hal.Pin("PC13");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const rtc = struct {
-            pub const Af1 = pin.Analog;
+            pub const af1 = pin.analog;
         };
     };
     pub const pc14 = struct {
-        const pin = Pin("PC14");
+        const pin = hal.Pin("PC14");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const rcc = struct {
-            pub const Osc32In = pin.Analog;
+            pub const osc32_in = pin.analog;
         };
     };
     pub const pc15 = struct {
-        const pin = Pin("PC15");
+        const pin = hal.Pin("PC15");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const rcc = struct {
-            pub const Osc32Out = pin.Analog;
+            pub const osc32_out = pin.analog;
         };
     };
     pub const pd2 = struct {
-        const pin = Pin("PD2");
+        const pin = hal.Pin("PD2");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const sdio = struct {
-            pub fn Cmd() type {
-                return pin.Function(12);
+            pub fn cmd(c: hal.FunctionConfig) void {
+                pin.Function(12).init(c);
             }
         };
         pub const tim3 = struct {
-            pub fn Etr() type {
-                return pin.Function(2);
+            pub fn etr(c: hal.FunctionConfig) void {
+                pin.Function(2).init(c);
             }
         };
     };
     pub const ph0 = struct {
-        const pin = Pin("PH0");
+        const pin = hal.Pin("PH0");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const rcc = struct {
-            pub const OscIn = pin.Analog;
+            pub const osc_in = pin.analog;
         };
     };
     pub const ph1 = struct {
-        const pin = Pin("PH1");
+        const pin = hal.Pin("PH1");
         pub const Output = pin.Output;
         pub const Input = pin.Input;
-        pub const Analog = pin.Analog;
+        pub const analog = pin.analog;
         pub const rcc = struct {
-            pub const OscOut = pin.Analog;
+            pub const osc_out = pin.analog;
         };
     };
 
     pub const adc1 = struct {
         pub const in0 = struct {
-            pub const Pa0 = pa0.adc1.In0;
+            pub const pa0 = gpio.pa0.adc1.in0;
         };
         pub const in1 = struct {
-            pub const Pa1 = pa1.adc1.In1;
+            pub const pa1 = gpio.pa1.adc1.in1;
         };
         pub const in2 = struct {
-            pub const Pa2 = pa2.adc1.In2;
+            pub const pa2 = gpio.pa2.adc1.in2;
         };
         pub const in3 = struct {
-            pub const Pa3 = pa3.adc1.In3;
+            pub const pa3 = gpio.pa3.adc1.in3;
         };
         pub const in4 = struct {
-            pub const Pa4 = pa4.adc1.In4;
+            pub const pa4 = gpio.pa4.adc1.in4;
         };
         pub const in5 = struct {
-            pub const Pa5 = pa5.adc1.In5;
+            pub const pa5 = gpio.pa5.adc1.in5;
         };
         pub const in6 = struct {
-            pub const Pa6 = pa6.adc1.In6;
+            pub const pa6 = gpio.pa6.adc1.in6;
         };
         pub const in7 = struct {
-            pub const Pa7 = pa7.adc1.In7;
+            pub const pa7 = gpio.pa7.adc1.in7;
         };
         pub const in8 = struct {
-            pub const Pb0 = pb0.adc1.In8;
+            pub const pb0 = gpio.pb0.adc1.in8;
         };
         pub const in9 = struct {
-            pub const Pb1 = pb1.adc1.In9;
+            pub const pb1 = gpio.pb1.adc1.in9;
         };
         pub const in10 = struct {
-            pub const Pc0 = pc0.adc1.In10;
+            pub const pc0 = gpio.pc0.adc1.in10;
         };
         pub const in11 = struct {
-            pub const Pc1 = pc1.adc1.In11;
+            pub const pc1 = gpio.pc1.adc1.in11;
         };
         pub const in12 = struct {
-            pub const Pc2 = pc2.adc1.In12;
+            pub const pc2 = gpio.pc2.adc1.in12;
         };
         pub const in13 = struct {
-            pub const Pc3 = pc3.adc1.In13;
+            pub const pc3 = gpio.pc3.adc1.in13;
         };
         pub const in14 = struct {
-            pub const Pc4 = pc4.adc1.In14;
+            pub const pc4 = gpio.pc4.adc1.in14;
         };
         pub const in15 = struct {
-            pub const Pc5 = pc5.adc1.In15;
+            pub const pc5 = gpio.pc5.adc1.in15;
         };
     };
     pub const i2c1 = struct {
         pub const smba = struct {
-            pub const Pb5 = pb5.i2c1.Smba;
+            pub const pb5 = gpio.pb5.i2c1.smba;
         };
         pub const scl = struct {
-            pub const Pb6 = pb6.i2c1.Scl;
-            pub const Pb8 = pb8.i2c1.Scl;
+            pub const pb6 = gpio.pb6.i2c1.scl;
+            pub const pb8 = gpio.pb8.i2c1.scl;
         };
         pub const sda = struct {
-            pub const Pb7 = pb7.i2c1.Sda;
-            pub const Pb9 = pb9.i2c1.Sda;
+            pub const pb7 = gpio.pb7.i2c1.sda;
+            pub const pb9 = gpio.pb9.i2c1.sda;
         };
     };
     pub const i2c2 = struct {
         pub const sda = struct {
-            pub const Pb3 = pb3.i2c2.Sda;
-            pub const Pb9 = pb9.i2c2.Sda;
+            pub const pb3 = gpio.pb3.i2c2.sda;
+            pub const pb9 = gpio.pb9.i2c2.sda;
         };
         pub const scl = struct {
-            pub const Pb10 = pb10.i2c2.Scl;
+            pub const pb10 = gpio.pb10.i2c2.scl;
         };
         pub const smba = struct {
-            pub const Pb12 = pb12.i2c2.Smba;
+            pub const pb12 = gpio.pb12.i2c2.smba;
         };
     };
     pub const i2c3 = struct {
         pub const scl = struct {
-            pub const Pa8 = pa8.i2c3.Scl;
+            pub const pa8 = gpio.pa8.i2c3.scl;
         };
         pub const smba = struct {
-            pub const Pa9 = pa9.i2c3.Smba;
+            pub const pa9 = gpio.pa9.i2c3.smba;
         };
         pub const sda = struct {
-            pub const Pb4 = pb4.i2c3.Sda;
-            pub const Pb8 = pb8.i2c3.Sda;
-            pub const Pc9 = pc9.i2c3.Sda;
+            pub const pb4 = gpio.pb4.i2c3.sda;
+            pub const pb8 = gpio.pb8.i2c3.sda;
+            pub const pc9 = gpio.pc9.i2c3.sda;
         };
     };
     pub const rcc = struct {
         pub const mco_1 = struct {
-            pub const Pa8 = pa8.rcc.Mco1;
+            pub const pa8 = gpio.pa8.rcc.mco_1;
         };
         pub const mco_2 = struct {
-            pub const Pc9 = pc9.rcc.Mco2;
+            pub const pc9 = gpio.pc9.rcc.mco_2;
         };
         pub const osc32_in = struct {
-            pub const Pc14 = pc14.rcc.Osc32In;
+            pub const pc14 = gpio.pc14.rcc.osc32_in;
         };
         pub const osc32_out = struct {
-            pub const Pc15 = pc15.rcc.Osc32Out;
+            pub const pc15 = gpio.pc15.rcc.osc32_out;
         };
         pub const osc_in = struct {
-            pub const Ph0 = ph0.rcc.OscIn;
+            pub const ph0 = gpio.ph0.rcc.osc_in;
         };
         pub const osc_out = struct {
-            pub const Ph1 = ph1.rcc.OscOut;
+            pub const ph1 = gpio.ph1.rcc.osc_out;
         };
     };
     pub const rtc = struct {
         pub const refin = struct {
-            pub const Pb15 = pb15.rtc.Refin;
+            pub const pb15 = gpio.pb15.rtc.refin;
         };
         pub const af1 = struct {
-            pub const Pc13 = pc13.rtc.Af1;
+            pub const pc13 = gpio.pc13.rtc.af1;
         };
     };
     pub const sdio = struct {
         pub const cmd = struct {
-            pub const Pa6 = pa6.sdio.Cmd;
-            pub const Pd2 = pd2.sdio.Cmd;
+            pub const pa6 = gpio.pa6.sdio.cmd;
+            pub const pd2 = gpio.pd2.sdio.cmd;
         };
         pub const d1 = struct {
-            pub const Pa8 = pa8.sdio.D1;
-            pub const Pc9 = pc9.sdio.D1;
+            pub const pa8 = gpio.pa8.sdio.d1;
+            pub const pc9 = gpio.pc9.sdio.d1;
         };
         pub const d2 = struct {
-            pub const Pa9 = pa9.sdio.D2;
-            pub const Pc10 = pc10.sdio.D2;
+            pub const pa9 = gpio.pa9.sdio.d2;
+            pub const pc10 = gpio.pc10.sdio.d2;
         };
         pub const d0 = struct {
-            pub const Pb4 = pb4.sdio.D0;
-            pub const Pb7 = pb7.sdio.D0;
-            pub const Pc8 = pc8.sdio.D0;
+            pub const pb4 = gpio.pb4.sdio.d0;
+            pub const pb7 = gpio.pb7.sdio.d0;
+            pub const pc8 = gpio.pc8.sdio.d0;
         };
         pub const d3 = struct {
-            pub const Pb5 = pb5.sdio.D3;
-            pub const Pc11 = pc11.sdio.D3;
+            pub const pb5 = gpio.pb5.sdio.d3;
+            pub const pc11 = gpio.pc11.sdio.d3;
         };
         pub const d4 = struct {
-            pub const Pb8 = pb8.sdio.D4;
+            pub const pb8 = gpio.pb8.sdio.d4;
         };
         pub const d5 = struct {
-            pub const Pb9 = pb9.sdio.D5;
+            pub const pb9 = gpio.pb9.sdio.d5;
         };
         pub const d7 = struct {
-            pub const Pb10 = pb10.sdio.D7;
-            pub const Pc7 = pc7.sdio.D7;
+            pub const pb10 = gpio.pb10.sdio.d7;
+            pub const pc7 = gpio.pc7.sdio.d7;
         };
         pub const d6 = struct {
-            pub const Pb14 = pb14.sdio.D6;
-            pub const Pc6 = pc6.sdio.D6;
+            pub const pb14 = gpio.pb14.sdio.d6;
+            pub const pc6 = gpio.pc6.sdio.d6;
         };
         pub const ck = struct {
-            pub const Pb15 = pb15.sdio.Ck;
-            pub const Pc12 = pc12.sdio.Ck;
+            pub const pb15 = gpio.pb15.sdio.ck;
+            pub const pc12 = gpio.pc12.sdio.ck;
         };
     };
     pub const spi1 = struct {
         pub const nss = struct {
-            pub const Pa4 = pa4.spi1.Nss;
-            pub const Pa15 = pa15.spi1.Nss;
+            pub const pa4 = gpio.pa4.spi1.nss;
+            pub const pa15 = gpio.pa15.spi1.nss;
         };
         pub const sck = struct {
-            pub const Pa5 = pa5.spi1.Sck;
-            pub const Pb3 = pb3.spi1.Sck;
+            pub const pa5 = gpio.pa5.spi1.sck;
+            pub const pb3 = gpio.pb3.spi1.sck;
         };
         pub const miso = struct {
-            pub const Pa6 = pa6.spi1.Miso;
-            pub const Pb4 = pb4.spi1.Miso;
+            pub const pa6 = gpio.pa6.spi1.miso;
+            pub const pb4 = gpio.pb4.spi1.miso;
         };
         pub const mosi = struct {
-            pub const Pa7 = pa7.spi1.Mosi;
-            pub const Pb5 = pb5.spi1.Mosi;
+            pub const pa7 = gpio.pa7.spi1.mosi;
+            pub const pb5 = gpio.pb5.spi1.mosi;
         };
     };
     pub const spi2 = struct {
         pub const nss = struct {
-            pub const Pb9 = pb9.spi2.Nss;
-            pub const Pb12 = pb12.spi2.Nss;
+            pub const pb9 = gpio.pb9.spi2.nss;
+            pub const pb12 = gpio.pb12.spi2.nss;
         };
         pub const sck = struct {
-            pub const Pb10 = pb10.spi2.Sck;
-            pub const Pb13 = pb13.spi2.Sck;
-            pub const Pc7 = pc7.spi2.Sck;
+            pub const pb10 = gpio.pb10.spi2.sck;
+            pub const pb13 = gpio.pb13.spi2.sck;
+            pub const pc7 = gpio.pc7.spi2.sck;
         };
         pub const miso = struct {
-            pub const Pb14 = pb14.spi2.Miso;
-            pub const Pc2 = pc2.spi2.Miso;
+            pub const pb14 = gpio.pb14.spi2.miso;
+            pub const pc2 = gpio.pc2.spi2.miso;
         };
         pub const mosi = struct {
-            pub const Pb15 = pb15.spi2.Mosi;
-            pub const Pc3 = pc3.spi2.Mosi;
+            pub const pb15 = gpio.pb15.spi2.mosi;
+            pub const pc3 = gpio.pc3.spi2.mosi;
         };
     };
     pub const spi3 = struct {
         pub const nss = struct {
-            pub const Pa4 = pa4.spi3.Nss;
-            pub const Pa15 = pa15.spi3.Nss;
+            pub const pa4 = gpio.pa4.spi3.nss;
+            pub const pa15 = gpio.pa15.spi3.nss;
         };
         pub const sck = struct {
-            pub const Pb3 = pb3.spi3.Sck;
-            pub const Pb12 = pb12.spi3.Sck;
-            pub const Pc10 = pc10.spi3.Sck;
+            pub const pb3 = gpio.pb3.spi3.sck;
+            pub const pb12 = gpio.pb12.spi3.sck;
+            pub const pc10 = gpio.pc10.spi3.sck;
         };
         pub const miso = struct {
-            pub const Pb4 = pb4.spi3.Miso;
-            pub const Pc11 = pc11.spi3.Miso;
+            pub const pb4 = gpio.pb4.spi3.miso;
+            pub const pc11 = gpio.pc11.spi3.miso;
         };
         pub const mosi = struct {
-            pub const Pb5 = pb5.spi3.Mosi;
-            pub const Pc12 = pc12.spi3.Mosi;
+            pub const pb5 = gpio.pb5.spi3.mosi;
+            pub const pc12 = gpio.pc12.spi3.mosi;
         };
     };
     pub const spi4 = struct {
         pub const mosi = struct {
-            pub const Pa1 = pa1.spi4.Mosi;
+            pub const pa1 = gpio.pa1.spi4.mosi;
         };
         pub const miso = struct {
-            pub const Pa11 = pa11.spi4.Miso;
+            pub const pa11 = gpio.pa11.spi4.miso;
         };
         pub const nss = struct {
-            pub const Pb12 = pb12.spi4.Nss;
+            pub const pb12 = gpio.pb12.spi4.nss;
         };
         pub const sck = struct {
-            pub const Pb13 = pb13.spi4.Sck;
+            pub const pb13 = gpio.pb13.spi4.sck;
         };
     };
     pub const spi5 = struct {
         pub const mosi = struct {
-            pub const Pa10 = pa10.spi5.Mosi;
-            pub const Pb8 = pb8.spi5.Mosi;
+            pub const pa10 = gpio.pa10.spi5.mosi;
+            pub const pb8 = gpio.pb8.spi5.mosi;
         };
         pub const miso = struct {
-            pub const Pa12 = pa12.spi5.Miso;
+            pub const pa12 = gpio.pa12.spi5.miso;
         };
         pub const sck = struct {
-            pub const Pb0 = pb0.spi5.Sck;
+            pub const pb0 = gpio.pb0.spi5.sck;
         };
         pub const nss = struct {
-            pub const Pb1 = pb1.spi5.Nss;
+            pub const pb1 = gpio.pb1.spi5.nss;
         };
     };
     pub const tim1 = struct {
         pub const bkin = struct {
-            pub const Pa6 = pa6.tim1.Bkin;
-            pub const Pb12 = pb12.tim1.Bkin;
+            pub const pa6 = gpio.pa6.tim1.bkin;
+            pub const pb12 = gpio.pb12.tim1.bkin;
         };
         pub const ch1n = struct {
-            pub const Pa7 = pa7.tim1.Ch1n;
-            pub const Pb13 = pb13.tim1.Ch1n;
+            pub const pa7 = gpio.pa7.tim1.ch1n;
+            pub const pb13 = gpio.pb13.tim1.ch1n;
         };
         pub const ch1 = struct {
-            pub const Pa8 = pa8.tim1.Ch1;
+            pub const pa8 = gpio.pa8.tim1.ch1;
         };
         pub const ch2 = struct {
-            pub const Pa9 = pa9.tim1.Ch2;
+            pub const pa9 = gpio.pa9.tim1.ch2;
         };
         pub const ch3 = struct {
-            pub const Pa10 = pa10.tim1.Ch3;
+            pub const pa10 = gpio.pa10.tim1.ch3;
         };
         pub const ch4 = struct {
-            pub const Pa11 = pa11.tim1.Ch4;
+            pub const pa11 = gpio.pa11.tim1.ch4;
         };
         pub const etr = struct {
-            pub const Pa12 = pa12.tim1.Etr;
+            pub const pa12 = gpio.pa12.tim1.etr;
         };
         pub const ch2n = struct {
-            pub const Pb0 = pb0.tim1.Ch2n;
-            pub const Pb14 = pb14.tim1.Ch2n;
+            pub const pb0 = gpio.pb0.tim1.ch2n;
+            pub const pb14 = gpio.pb14.tim1.ch2n;
         };
         pub const ch3n = struct {
-            pub const Pb1 = pb1.tim1.Ch3n;
-            pub const Pb15 = pb15.tim1.Ch3n;
+            pub const pb1 = gpio.pb1.tim1.ch3n;
+            pub const pb15 = gpio.pb15.tim1.ch3n;
         };
     };
     pub const tim10 = struct {
         pub const ch1 = struct {
-            pub const Pb8 = pb8.tim10.Ch1;
+            pub const pb8 = gpio.pb8.tim10.ch1;
         };
     };
     pub const tim11 = struct {
         pub const ch1 = struct {
-            pub const Pb9 = pb9.tim11.Ch1;
+            pub const pb9 = gpio.pb9.tim11.ch1;
         };
     };
     pub const tim2 = struct {
         pub const ch1 = struct {
-            pub const Pa0 = pa0.tim2.Ch1;
-            pub const Pa5 = pa5.tim2.Ch1;
-            pub const Pa15 = pa15.tim2.Ch1;
+            pub const pa0 = gpio.pa0.tim2.ch1;
+            pub const pa5 = gpio.pa5.tim2.ch1;
+            pub const pa15 = gpio.pa15.tim2.ch1;
         };
         pub const etr = struct {
-            pub const Pa0 = pa0.tim2.Etr;
-            pub const Pa5 = pa5.tim2.Etr;
-            pub const Pa15 = pa15.tim2.Etr;
+            pub const pa0 = gpio.pa0.tim2.etr;
+            pub const pa5 = gpio.pa5.tim2.etr;
+            pub const pa15 = gpio.pa15.tim2.etr;
         };
         pub const ch2 = struct {
-            pub const Pa1 = pa1.tim2.Ch2;
-            pub const Pb3 = pb3.tim2.Ch2;
+            pub const pa1 = gpio.pa1.tim2.ch2;
+            pub const pb3 = gpio.pb3.tim2.ch2;
         };
         pub const ch3 = struct {
-            pub const Pa2 = pa2.tim2.Ch3;
-            pub const Pb10 = pb10.tim2.Ch3;
+            pub const pa2 = gpio.pa2.tim2.ch3;
+            pub const pb10 = gpio.pb10.tim2.ch3;
         };
         pub const ch4 = struct {
-            pub const Pa3 = pa3.tim2.Ch4;
+            pub const pa3 = gpio.pa3.tim2.ch4;
         };
     };
     pub const tim3 = struct {
         pub const ch1 = struct {
-            pub const Pa6 = pa6.tim3.Ch1;
-            pub const Pb4 = pb4.tim3.Ch1;
-            pub const Pc6 = pc6.tim3.Ch1;
+            pub const pa6 = gpio.pa6.tim3.ch1;
+            pub const pb4 = gpio.pb4.tim3.ch1;
+            pub const pc6 = gpio.pc6.tim3.ch1;
         };
         pub const ch2 = struct {
-            pub const Pa7 = pa7.tim3.Ch2;
-            pub const Pb5 = pb5.tim3.Ch2;
-            pub const Pc7 = pc7.tim3.Ch2;
+            pub const pa7 = gpio.pa7.tim3.ch2;
+            pub const pb5 = gpio.pb5.tim3.ch2;
+            pub const pc7 = gpio.pc7.tim3.ch2;
         };
         pub const ch3 = struct {
-            pub const Pb0 = pb0.tim3.Ch3;
-            pub const Pc8 = pc8.tim3.Ch3;
+            pub const pb0 = gpio.pb0.tim3.ch3;
+            pub const pc8 = gpio.pc8.tim3.ch3;
         };
         pub const ch4 = struct {
-            pub const Pb1 = pb1.tim3.Ch4;
-            pub const Pc9 = pc9.tim3.Ch4;
+            pub const pb1 = gpio.pb1.tim3.ch4;
+            pub const pc9 = gpio.pc9.tim3.ch4;
         };
         pub const etr = struct {
-            pub const Pd2 = pd2.tim3.Etr;
+            pub const pd2 = gpio.pd2.tim3.etr;
         };
     };
     pub const tim4 = struct {
         pub const ch1 = struct {
-            pub const Pb6 = pb6.tim4.Ch1;
+            pub const pb6 = gpio.pb6.tim4.ch1;
         };
         pub const ch2 = struct {
-            pub const Pb7 = pb7.tim4.Ch2;
+            pub const pb7 = gpio.pb7.tim4.ch2;
         };
         pub const ch3 = struct {
-            pub const Pb8 = pb8.tim4.Ch3;
+            pub const pb8 = gpio.pb8.tim4.ch3;
         };
         pub const ch4 = struct {
-            pub const Pb9 = pb9.tim4.Ch4;
+            pub const pb9 = gpio.pb9.tim4.ch4;
         };
     };
     pub const tim5 = struct {
         pub const ch1 = struct {
-            pub const Pa0 = pa0.tim5.Ch1;
+            pub const pa0 = gpio.pa0.tim5.ch1;
         };
         pub const ch2 = struct {
-            pub const Pa1 = pa1.tim5.Ch2;
+            pub const pa1 = gpio.pa1.tim5.ch2;
         };
         pub const ch3 = struct {
-            pub const Pa2 = pa2.tim5.Ch3;
+            pub const pa2 = gpio.pa2.tim5.ch3;
         };
         pub const ch4 = struct {
-            pub const Pa3 = pa3.tim5.Ch4;
+            pub const pa3 = gpio.pa3.tim5.ch4;
         };
     };
     pub const tim9 = struct {
         pub const ch1 = struct {
-            pub const Pa2 = pa2.tim9.Ch1;
+            pub const pa2 = gpio.pa2.tim9.ch1;
         };
         pub const ch2 = struct {
-            pub const Pa3 = pa3.tim9.Ch2;
+            pub const pa3 = gpio.pa3.tim9.ch2;
         };
     };
     pub const usart1 = struct {
         pub const ck = struct {
-            pub const Pa8 = pa8.usart1.Ck;
+            pub const pa8 = gpio.pa8.usart1.ck;
         };
         pub const tx = struct {
-            pub const Pa9 = pa9.usart1.Tx;
-            pub const Pa15 = pa15.usart1.Tx;
-            pub const Pb6 = pb6.usart1.Tx;
+            pub const pa9 = gpio.pa9.usart1.tx;
+            pub const pa15 = gpio.pa15.usart1.tx;
+            pub const pb6 = gpio.pb6.usart1.tx;
         };
         pub const rx = struct {
-            pub const Pa10 = pa10.usart1.Rx;
-            pub const Pb3 = pb3.usart1.Rx;
-            pub const Pb7 = pb7.usart1.Rx;
+            pub const pa10 = gpio.pa10.usart1.rx;
+            pub const pb3 = gpio.pb3.usart1.rx;
+            pub const pb7 = gpio.pb7.usart1.rx;
         };
         pub const cts = struct {
-            pub const Pa11 = pa11.usart1.Cts;
+            pub const pa11 = gpio.pa11.usart1.cts;
         };
         pub const rts = struct {
-            pub const Pa12 = pa12.usart1.Rts;
+            pub const pa12 = gpio.pa12.usart1.rts;
         };
     };
     pub const usart2 = struct {
         pub const cts = struct {
-            pub const Pa0 = pa0.usart2.Cts;
+            pub const pa0 = gpio.pa0.usart2.cts;
         };
         pub const rts = struct {
-            pub const Pa1 = pa1.usart2.Rts;
+            pub const pa1 = gpio.pa1.usart2.rts;
         };
         pub const tx = struct {
-            pub const Pa2 = pa2.usart2.Tx;
+            pub const pa2 = gpio.pa2.usart2.tx;
         };
         pub const rx = struct {
-            pub const Pa3 = pa3.usart2.Rx;
+            pub const pa3 = gpio.pa3.usart2.rx;
         };
         pub const ck = struct {
-            pub const Pa4 = pa4.usart2.Ck;
+            pub const pa4 = gpio.pa4.usart2.ck;
         };
     };
     pub const usart6 = struct {
         pub const tx = struct {
-            pub const Pa11 = pa11.usart6.Tx;
-            pub const Pc6 = pc6.usart6.Tx;
+            pub const pa11 = gpio.pa11.usart6.tx;
+            pub const pc6 = gpio.pc6.usart6.tx;
         };
         pub const rx = struct {
-            pub const Pa12 = pa12.usart6.Rx;
-            pub const Pc7 = pc7.usart6.Rx;
+            pub const pa12 = gpio.pa12.usart6.rx;
+            pub const pc7 = gpio.pc7.usart6.rx;
         };
         pub const ck = struct {
-            pub const Pc8 = pc8.usart6.Ck;
+            pub const pc8 = gpio.pc8.usart6.ck;
         };
     };
     pub const usb_otg_fs = struct {
         pub const sof = struct {
-            pub const Pa8 = pa8.usb_otg_fs.Sof;
+            pub const pa8 = gpio.pa8.usb_otg_fs.sof;
         };
         pub const vbus = struct {
-            pub const Pa9 = pa9.usb_otg_fs.Vbus;
+            pub const pa9 = gpio.pa9.usb_otg_fs.vbus;
         };
         pub const id = struct {
-            pub const Pa10 = pa10.usb_otg_fs.Id;
+            pub const pa10 = gpio.pa10.usb_otg_fs.id;
         };
         pub const dm = struct {
-            pub const Pa11 = pa11.usb_otg_fs.Dm;
+            pub const pa11 = gpio.pa11.usb_otg_fs.dm;
         };
         pub const dp = struct {
-            pub const Pa12 = pa12.usb_otg_fs.Dp;
+            pub const pa12 = gpio.pa12.usb_otg_fs.dp;
         };
     };
 };
