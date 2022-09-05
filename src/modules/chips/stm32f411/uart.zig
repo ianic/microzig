@@ -9,9 +9,7 @@ pub const Config = struct {
     stop_bits: StopBits = .one,
     parity: ?Parity = null,
     data_bits: DataBits = .eight,
-
-    tx_enable: bool = true,
-    rx_enable: bool = true,
+    enable: Enable = .both,
 
     const Self = @This();
 
@@ -35,7 +33,7 @@ pub const Config = struct {
         // then we also mask away the 8th bit.
         return if (self.parity != null and self.wordLength() == 0) 0x7F else 0xFF;
     }
-    fn usartDiv(comptime self: Self, comptime bus_frequency: u32) u16 {
+    fn usartDiv(comptime self: Self, bus_frequency: u32) u16 {
         // Despite the reference manual talking about fractional calculation and other buzzwords,
         // it is actually just a simple divider. Just ignore DIV_Mantissa and DIV_Fraction and
         // set the result of the division as the lower 16 bits of BRR.
@@ -43,6 +41,18 @@ pub const Config = struct {
         // TODO: Do some checks to see if the baud rate is too high (or perhaps too low)
         // TODO: Do a rounding div, instead of a truncating div?
         return @intCast(u16, @divTrunc(bus_frequency, self.baud_rate));
+    }
+    fn txEnable(comptime self: Self) bool {
+        return self.enable == .both or self.enable == .tx_only;
+    }
+    fn rxEnable(comptime self: Self) bool {
+        return self.enable == .both or self.enable == .rx_only;
+    }
+    fn te(comptime self: Self) u1 {
+        if (self.enable == .both or self.enable == .tx_only) return 1 else 0;
+    }
+    fn re(comptime self: Self) u1 {
+        if (self.enable == .both or self.enable == .rx_only) return 1 else 0;
     }
 };
 
@@ -52,7 +62,7 @@ pub const DataBits = enum {
     nine,
 };
 
-/// uses the values of USART_CR2.STOP
+/// uses the values of USARTx.CR2.STOP
 pub const StopBits = enum(u2) {
     one = 0b00,
     half = 0b01,
@@ -60,10 +70,16 @@ pub const StopBits = enum(u2) {
     one_and_half = 0b11,
 };
 
-/// uses the values of USART_CR1.PS
+/// uses the values of USARTx.CR1.PS
 pub const Parity = enum(u1) {
     even = 0,
     odd = 1,
+};
+
+pub const Enable = enum {
+    both,
+    tx_only,
+    rx_only,
 };
 
 test "Config.usartdiv" {
@@ -85,23 +101,22 @@ test "Config.usartdiv" {
     try std.testing.expectEqual(cfg2.usartDiv(hsi_100.frequencies.apb2), 651);
 }
 
-pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) type {
-    //assertValidPins(data, config.tx, config.rx);
+pub fn UartX(comptime data: type, comptime config: Config) type {
     assertConfig(config);
 
-    const base = Base(data, config, freq);
+    const base = Base(data, config);
     return struct {
         pub fn Pooling() type {
             return struct {
-                pub fn init() void {
-                    base.init();
+                pub fn init(frequencies: anytype) void {
+                    base.init(frequencies);
                 }
-                pub const tx = if (config.tx_enable) struct {
+                pub const tx = if (config.txEnable()) struct {
                     pub const ready = base.tx.ready;
                     pub const write = base.tx.write;
                     pub const flush = base.tx.flush;
                 } else @compileError("tx not enabled");
-                pub const rx = if (config.rx_enable) struct {
+                pub const rx = if (config.rxEnable()) struct {
                     pub const ready = base.rx.ready;
                     pub const read = base.rx.read;
                 } else @compileError("rx not enabled");
@@ -109,12 +124,12 @@ pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) t
         }
         pub fn Interrupt() type {
             return struct {
-                pub fn init() void {
-                    base.init();
+                pub fn init(frequencies: anytype) void {
+                    base.init(frequencies);
                     base.initIrq();
                 }
-                pub const tx = if (config.tx_enable) base.tx else @compileError("tx not enabled");
-                pub const rx = if (config.rx_enable) base.rx else @compileError("rx not enabled");
+                pub const tx = if (config.txEnable()) base.tx else @compileError("tx not enabled");
+                pub const rx = if (config.rxEnable()) base.rx else @compileError("rx not enabled");
             };
         }
         pub fn Dma() type {
@@ -136,18 +151,18 @@ pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) t
             });
 
             return struct {
-                pub fn init() void {
-                    base.init();
+                pub fn init(frequencies: anytype) void {
+                    base.init(frequencies);
                     base.initDma();
                     dmaTx.init();
                     dmaRx.init();
                 }
-                pub const tx = if (config.tx_enable) struct {
+                pub const tx = if (config.txEnable()) struct {
                     pub const write = dmaTx.start;
                     pub const ready = dmaTx.ready;
                     pub const irq = dmaTx.irq;
                 } else @compileError("tx not enabled");
-                pub const rx = if (config.rx_enable) struct {
+                pub const rx = if (config.rxEnable()) struct {
                     pub const read = dmaRx.start;
                     pub const ready = dmaRx.ready;
                     pub const irq = dmaRx.irq;
@@ -157,12 +172,13 @@ pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) t
     };
 }
 
-fn Base(comptime data: type, comptime config: Config, comptime freq: u32) type {
+fn Base(comptime data: type, comptime config: Config) type {
     const reg = @field(regs, data.name); // regs.USARTx
     const parity_read_mask = config.parityReadMask();
 
     return struct {
-        pub fn init() void {
+        pub fn init(freqencies: anytype) void {
+            const bus_frequency = @field(freqencies, "apb" ++ data.rcc[3..]); // apb2 or apb1
             // The following must all be written when the USART is disabled (UE=0).
             if (reg.CR1.read().UE == 1) {
                 reg.CR1.modify(.{ .UE = 0 });
@@ -177,13 +193,13 @@ fn Base(comptime data: type, comptime config: Config, comptime freq: u32) type {
             reg.CR2.raw = 0;
             reg.CR3.raw = 0;
 
-            reg.BRR.raw = config.usartDiv(freq); // set baud rate
+            reg.BRR.raw = config.usartDiv(bus_frequency); // set baud rate
             reg.CR1.modify(.{
                 .M = config.wordLength(),
                 .PCE = config.parityControlEnable(),
                 .PS = config.paritySelection(),
-                .TE = if (config.tx_enable) 1 else 0,
-                .RE = if (config.rx_enable) 1 else 0,
+                .TE = config.te(),
+                .RE = config.re(),
             });
             reg.CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) }); // set number of stop bits
             reg.CR1.modify(.{ .UE = 1 }); // enable the USART
@@ -267,62 +283,7 @@ fn assertConfig(comptime config: Config) void {
 test "assertConfig" {
     assertConfig(.{ .baud_rate = 1, .data_bits = .nine });
     assertConfig(.{ .baud_rate = 1, .data_bits = .seven, .parity = .odd });
-}
-
-fn assertValidPins(comptime data: type, comptime pin_tx: ?type, comptime pin_rx: ?type) void {
-    if (pin_tx == null and pin_rx == null) {
-        @compileError("UART pins are not specified");
-    }
-    if (pin_tx) |tx| brk: {
-        inline for (data.pin.tx) |valid_tx| {
-            if (valid_tx == tx) {
-                break :brk;
-            }
-        }
-        @compileError(comptime std.fmt.comptimePrint("Tx pin {?} is not valid for {s}", .{ tx, data.name }));
-    }
-    if (pin_rx) |rx| brk: {
-        inline for (data.pin.rx) |valid_rx| {
-            if (valid_rx == rx) {
-                break :brk;
-            }
-        }
-        @compileError(comptime std.fmt.comptimePrint("Rx pin {?} is not valid for {s}", .{ rx, data.name }));
-    }
-}
-
-const mockGpio = struct {
-    pub const USART1 = struct {
-        pub const TX = struct {
-            pub const PA9 = mockPin("PA9");
-            pub const PA15 = mockPin("PA15");
-            pub const PB6 = mockPin("PB6");
-        };
-        pub const RX = struct {
-            pub const PA10 = mockPin("PA10");
-            pub const PB3 = mockPin("PB3");
-            pub const PB7 = mockPin("PB7");
-        };
-    };
-};
-
-fn mockPin(comptime _: []const u8) type {
-    return struct {};
-}
-
-test "assertValidPins" {
-    const uart1_data = struct {
-        const pin = struct {
-            const tx = [_]type{ mockGpio.USART1.TX.PA9, mockGpio.USART1.TX.PA15, mockGpio.USART1.TX.PB6 };
-            const rx = [_]type{ mockGpio.USART1.RX.PA10, mockGpio.USART1.RX.PB3, mockGpio.USART1.RX.PB7 };
-        };
-    };
-
-    assertValidPins(uart1_data, mockGpio.USART1.TX.PA9, null);
-    assertValidPins(uart1_data, null, mockGpio.USART1.RX.PB7);
-    assertValidPins(uart1_data, mockGpio.USART1.TX.PA9, mockGpio.USART1.RX.PA10);
-    assertValidPins(uart1_data, mockGpio.USART1.TX.PA15, mockGpio.USART1.RX.PB3);
-    assertValidPins(uart1_data, mockGpio.USART1.TX.PB6, mockGpio.USART1.RX.PB7);
+    //assertConfig(.{ .tx_enable = false, .rx_enable = false }); //TODO: how to test for compileError
 }
 
 const DmaConfig = struct {

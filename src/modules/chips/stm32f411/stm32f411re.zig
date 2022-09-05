@@ -313,7 +313,7 @@ pub const Irq = enum(u8) {
 const uart_hal = @import("uart.zig");
 
 pub const uart = struct {
-    pub fn Uart1(comptime config: uart_hal.Config, comptime freq: clk.Frequencies) type {
+    pub fn Uart1(comptime config: uart_hal.Config) type {
         const data = struct {
             pub const name = "USART1";
             pub const rcc = "APB2";
@@ -335,8 +335,8 @@ pub const uart = struct {
             };
         };
 
-        const bus_frequency = @field(freq, "apb" ++ data.rcc[3..]); // apb2 or apb1
-        return uart_hal.UartX(data, config, bus_frequency);
+        //const bus_frequency = @field(freq, "apb" ++ data.rcc[3..]); // apb2 or apb1
+        return uart_hal.UartX(data, config);
     }
 };
 // -------------- uart
