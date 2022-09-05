@@ -4,15 +4,14 @@ const chip = micro.chip;
 const regs = chip.regs;
 
 pub const Config = struct {
-    // pin definition
-    // at least one of this is required
-    tx: ?type = null,
-    rx: ?type = null,
     // communication params
     baud_rate: u32 = 9600,
     stop_bits: StopBits = .one,
     parity: ?Parity = null,
     data_bits: DataBits = .eight,
+
+    tx_enable: bool = true,
+    rx_enable: bool = true,
 
     const Self = @This();
 
@@ -29,12 +28,6 @@ pub const Config = struct {
         // - 0: 1 start bit, 8 data bits (7 data + 1 parity, or 8 data), n stop bits, the chip default
         // - 1: 1 start bit, 9 data bits (8 data + 1 parity, or 9 data), n stop bits
         return if (self.data_bits == .nine or (self.data_bits == .eight and self.parity != null)) 1 else 0;
-    }
-    fn txEnable(comptime self: Config) u1 {
-        return if (self.tx != null) 1 else 0;
-    }
-    fn rxEnable(comptime self: Config) u1 {
-        return if (self.rx != null) 1 else 0;
     }
     fn parityReadMask(comptime self: Config) u8 {
         // m ==1 means 'the 9th bit (not the 8th bit) is the parity bit'.
@@ -93,7 +86,7 @@ test "Config.usartdiv" {
 }
 
 pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) type {
-    assertValidPins(data, config.tx, config.rx);
+    //assertValidPins(data, config.tx, config.rx);
     assertConfig(config);
 
     const base = Base(data, config, freq);
@@ -103,12 +96,12 @@ pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) t
                 pub fn init() void {
                     base.init();
                 }
-                pub const tx = if (config.tx != null) struct {
+                pub const tx = if (config.tx_enable) struct {
                     pub const ready = base.tx.ready;
                     pub const write = base.tx.write;
                     pub const flush = base.tx.flush;
                 } else @compileError("tx not enabled");
-                pub const rx = if (config.rx != null) struct {
+                pub const rx = if (config.rx_enable) struct {
                     pub const ready = base.rx.ready;
                     pub const read = base.rx.read;
                 } else @compileError("rx not enabled");
@@ -120,8 +113,8 @@ pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) t
                     base.init();
                     base.initIrq();
                 }
-                pub const tx = if (config.tx != null) base.tx else @compileError("tx not enabled");
-                pub const rx = if (config.rx != null) base.rx else @compileError("rx not enabled");
+                pub const tx = if (config.tx_enable) base.tx else @compileError("tx not enabled");
+                pub const rx = if (config.rx_enable) base.rx else @compileError("rx not enabled");
             };
         }
         pub fn Dma() type {
@@ -149,12 +142,12 @@ pub fn UartX(comptime data: type, comptime config: Config, comptime freq: u32) t
                     dmaTx.init();
                     dmaRx.init();
                 }
-                pub const tx = if (config.tx != null) struct {
+                pub const tx = if (config.tx_enable) struct {
                     pub const write = dmaTx.start;
                     pub const ready = dmaTx.ready;
                     pub const irq = dmaTx.irq;
                 } else @compileError("tx not enabled");
-                pub const rx = if (config.rx != null) struct {
+                pub const rx = if (config.rx_enable) struct {
                     pub const read = dmaRx.start;
                     pub const ready = dmaRx.ready;
                     pub const irq = dmaRx.irq;
@@ -189,19 +182,10 @@ fn Base(comptime data: type, comptime config: Config, comptime freq: u32) type {
                 .M = config.wordLength(),
                 .PCE = config.parityControlEnable(),
                 .PS = config.paritySelection(),
-                .TE = config.txEnable(),
-                .RE = config.rxEnable(),
+                .TE = if (config.tx_enable) 1 else 0,
+                .RE = if (config.rx_enable) 1 else 0,
             });
             reg.CR2.modify(.{ .STOP = @enumToInt(config.stop_bits) }); // set number of stop bits
-
-            // configure gpio pins to required alternate function
-            if (config.tx) |pin| { // transmitter
-                pin.init(.{});
-            }
-            if (config.rx) |pin| { // receiver
-                pin.init(.{});
-            }
-
             reg.CR1.modify(.{ .UE = 1 }); // enable the USART
         }
 

@@ -317,10 +317,6 @@ pub const uart = struct {
         const data = struct {
             pub const name = "USART1";
             pub const rcc = "APB2";
-            pub const pin = struct {
-                pub const tx = [_]type{ gpio.usart1.tx.Pa9(), gpio.usart1.tx.Pa15(), gpio.usart1.tx.Pb6() };
-                pub const rx = [_]type{ gpio.usart1.rx.Pa10(), gpio.usart1.rx.Pb3(), gpio.usart1.rx.Pb7() };
-            };
 
             pub const irq = Irq.usart1;
 
