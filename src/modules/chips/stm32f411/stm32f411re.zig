@@ -314,69 +314,66 @@ const uart_hal = @import("uart.zig");
 
 pub const uart = struct {
     pub fn Uart1(comptime config: uart_hal.Config) type {
-        const data = struct {
-            pub const name = "USART1";
-            pub const rcc = "APB2";
-            pub const irq = Irq.usart1;
-            pub const dma = struct {
-                pub const controller = "DMA2";
-                pub const rx = struct {
-                    pub const stream = 5;
-                    pub const channel = 4;
-                    pub const irq = Irq.dma2_stream5;
-                };
-                pub const tx = struct {
-                    pub const stream = 7;
-                    pub const channel = 4;
-                    pub const irq = Irq.dma2_stream7;
-                };
-            };
-        };
-        return uart_hal.UartX(data, config);
+        return uart_hal.UartX(.{
+            .name = "USART1",
+            .rcc = "APB2",
+            .irq = Irq.usart1,
+            .dma = .{
+                .controller = "DMA2",
+                .rx = .{
+                    .stream = 5,
+                    .channel = 4,
+                    .irq = Irq.dma2_stream5,
+                },
+                .tx = .{
+                    .stream = 7,
+                    .channel = 4,
+                    .irq = Irq.dma2_stream7,
+                },
+            },
+        }, config);
     }
 
     pub fn Uart2(comptime config: uart_hal.Config) type {
-        const data = struct {
-            pub const name = "USART2";
-            pub const rcc = "APB1";
-            pub const irq = Irq.usart2;
-            pub const dma = struct {
-                pub const controller = "DMA1";
-                pub const rx = struct {
-                    pub const stream = 5;
-                    pub const channel = 4;
-                    pub const irq = Irq.dma1_stream5;
-                };
-                pub const tx = struct {
-                    pub const stream = 6;
-                    pub const channel = 4;
-                    pub const irq = Irq.dma1_stream6;
-                };
-            };
-        };
-        return uart_hal.UartX(data, config);
+        return uart_hal.UartX(.{
+            .name = "USART2",
+            .rcc = "APB1",
+            .irq = Irq.usart2,
+            .dma = .{
+                .controller = "DMA1",
+                .rx = .{
+                    .stream = 5,
+                    .channel = 4,
+                    .irq = Irq.dma1_stream5,
+                },
+                .tx = .{
+                    .stream = 6,
+                    .channel = 4,
+                    .irq = Irq.dma1_stream6,
+                },
+            },
+        }, config);
     }
 
     pub fn Uart6(comptime config: uart_hal.Config) type {
-        const data = struct {
-            pub const name = "USART6";
-            pub const rcc = "APB2";
-            pub const irq = Irq.usart6;
-            pub const dma = struct {
-                pub const controller = "DMA2";
-                pub const rx = struct {
-                    pub const stream = 1;
-                    pub const channel = 5;
-                    pub const irq = Irq.dma2_stream1;
-                };
-                pub const tx = struct {
-                    pub const stream = 2;
-                    pub const channel = 5;
-                    pub const irq = Irq.dma2_stream1;
-                };
-            };
-        };
-        return uart_hal.UartX(data, config);
+        return uart_hal.UartX(.{
+            .name = "USART6",
+            .rcc = "APB2",
+            .irq = Irq.usart6,
+            .dma = .{
+                .controller = "DMA2",
+                .rx = .{
+                    .stream = 1,
+                    .channel = 5,
+                    .irq = Irq.dma2_stream1,
+                },
+                .tx = .{
+                    .stream = 2,
+                    .channel = 5,
+                    .irq = Irq.dma2_stream1,
+                },
+            },
+        }, config);
     }
 };
 // -------------- uart

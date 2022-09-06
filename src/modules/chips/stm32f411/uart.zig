@@ -101,7 +101,7 @@ test "Config.usartdiv" {
     try std.testing.expectEqual(cfg2.usartDiv(hsi_100.frequencies.apb2), 651);
 }
 
-pub fn UartX(comptime data: type, comptime config: Config) type {
+pub fn UartX(comptime data: anytype, comptime config: Config) type {
     assertConfig(config);
 
     const base = Base(data, config);
@@ -201,7 +201,7 @@ pub fn UartX(comptime data: type, comptime config: Config) type {
     };
 }
 
-fn Base(comptime data: type, comptime config: Config) type {
+fn Base(comptime data: anytype, comptime config: Config) type {
     const reg = @field(regs, data.name); // regs.USARTx
     const parity_read_mask = config.parityReadMask();
 
