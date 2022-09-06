@@ -317,9 +317,7 @@ pub const uart = struct {
         const data = struct {
             pub const name = "USART1";
             pub const rcc = "APB2";
-
             pub const irq = Irq.usart1;
-
             pub const dma = struct {
                 pub const controller = "DMA2";
                 pub const rx = struct {
@@ -334,8 +332,50 @@ pub const uart = struct {
                 };
             };
         };
+        return uart_hal.UartX(data, config);
+    }
 
-        //const bus_frequency = @field(freq, "apb" ++ data.rcc[3..]); // apb2 or apb1
+    pub fn Uart2(comptime config: uart_hal.Config) type {
+        const data = struct {
+            pub const name = "USART2";
+            pub const rcc = "APB1";
+            pub const irq = Irq.usart2;
+            pub const dma = struct {
+                pub const controller = "DMA1";
+                pub const rx = struct {
+                    pub const stream = 5;
+                    pub const channel = 4;
+                    pub const irq = Irq.dma1_stream5;
+                };
+                pub const tx = struct {
+                    pub const stream = 6;
+                    pub const channel = 4;
+                    pub const irq = Irq.dma1_stream6;
+                };
+            };
+        };
+        return uart_hal.UartX(data, config);
+    }
+
+    pub fn Uart6(comptime config: uart_hal.Config) type {
+        const data = struct {
+            pub const name = "USART6";
+            pub const rcc = "APB2";
+            pub const irq = Irq.usart6;
+            pub const dma = struct {
+                pub const controller = "DMA2";
+                pub const rx = struct {
+                    pub const stream = 1;
+                    pub const channel = 5;
+                    pub const irq = Irq.dma2_stream1;
+                };
+                pub const tx = struct {
+                    pub const stream = 2;
+                    pub const channel = 5;
+                    pub const irq = Irq.dma2_stream1;
+                };
+            };
+        };
         return uart_hal.UartX(data, config);
     }
 };
