@@ -26,6 +26,9 @@ const ioctl_request_bytes_len = 1024;
 pub const InitOptions = struct {
     country: Country = .{},
 
+    firmware: []const u8 = @embedFile("../cyw43/firmware/43439A0_7_95_61.bin"),
+    clm: []const u8 = @embedFile("../cyw43/firmware/43439A0_clm.bin"),
+
     // List of available countries:
     // https://github.com/georgerobotics/cyw43-driver/blob/13004039ffe127519f33824bf7d240e1f23fbdcd/src/cyw43_country.h#L59
     pub const Country = struct {
@@ -62,8 +65,7 @@ pub fn init(self: *Self, opt: InitOptions) !void {
         bus.write_int(u32, .backplane, chip.socsram_base_address + 0x10, 3);
         bus.write_int(u32, .backplane, chip.socsram_base_address + 0x44, 0);
 
-        const firmware = @embedFile("../cyw43/firmware/43439A0_7_95_61.bin");
-        bus.backplane_write(chip.atcm_ram_base_address, firmware);
+        bus.backplane_write(chip.atcm_ram_base_address, opt.firmware);
     }
 
     { // Load nvram
@@ -116,8 +118,6 @@ pub fn init(self: *Self, opt: InitOptions) !void {
     }
 
     { // Load Country Locale Matrix (CLM)
-        const data = @embedFile("../cyw43/firmware/43439A0_clm.bin");
-
         const ClmLoadControl = extern struct {
             flag: u16 = 0,
             typ: u16 = 2,
@@ -125,6 +125,7 @@ pub fn init(self: *Self, opt: InitOptions) !void {
             crc: u32 = 0,
         };
 
+        const data = opt.clm;
         var nbytes: usize = 0;
         while (nbytes < data.len) {
             const head_len = @sizeOf(ClmLoadControl);
