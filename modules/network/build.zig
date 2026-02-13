@@ -33,6 +33,12 @@ pub fn build(b: *std.Build) void {
         "The size of each packet buffer in the pool",
     ) orelse mtu + ethernet_header + pbuf_header_length;
 
+    const lwip_include_dir = b.option(
+        std.Build.LazyPath,
+        "lwip_include_dir",
+        "Configurable include directory for lwip",
+    ) orelse b.path("src/include");
+
     if (pbuf_length < mtu + ethernet_header + pbuf_header_length) {
         @panic("Invalid lwip packet buffer length");
     }
@@ -57,7 +63,7 @@ pub fn build(b: *std.Build) void {
     const lwip_dep = b.dependency("lwip", .{
         .target = target,
         .optimize = optimize,
-        .include_dir = b.path("src/include"),
+        .include_dir = lwip_include_dir,
     });
     const lwip_lib = lwip_dep.artifact("lwip");
 
