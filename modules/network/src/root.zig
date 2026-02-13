@@ -625,6 +625,10 @@ export fn lwip_assert(msg: [*c]const u8, file: [*c]const u8, line: c_int) void {
     @panic("lwip assert");
 }
 
-export fn lwip_diag(msg: [*c]const u8, file: [*c]const u8, line: c_int) void {
-    log.debug("{s} in file: {s}, line: {}", .{ msg, file, line });
+export fn lwip_diag(fmt: [*:0]const u8, ...) void {
+    var args = @cVaStart();
+    defer @cVaEnd(&args);
+
+    _ = fmt;
+    _ = &args;
 }

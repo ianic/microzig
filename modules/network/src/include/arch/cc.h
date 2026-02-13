@@ -6,6 +6,19 @@
 
 typedef unsigned int sys_prot_t;
 
+// used in lwip debug:
+#define U16_F "u"
+#define S16_F "d"
+#define X16_F "x"
+#define U32_F "u"
+#define S32_F "d"
+#define X32_F "x"
+#define SZT_F "u"
+#define X8_F "02x"
+#define U8_F "u"
+#define S8_F "d"
+#define PTR_F "p"
+
 // Platform dependent methods, needs to be implemented for each chip.
 extern uint32_t lwip_rand(void);
 extern uint32_t lwip_sys_now(void);
@@ -14,12 +27,13 @@ extern uint32_t lwip_sys_now(void);
 extern void lwip_lock_interrupts(bool *state);
 extern void lwip_unlock_interrupts(bool state);
 extern void lwip_assert(const char *msg, const char *file, int line);
-extern void lwip_diag(const char *msg, const char *file, int line);
+extern void lwip_diag(const char *fmt, ...);
 
 #define LWIP_PLATFORM_DIAG(x)                                                  \
     do {                                                                       \
-        lwip_diag((msg), __FILE__, __LINE__);                                  \
+        lwip_diag x;                                                           \
     } while (0)
+
 #define LWIP_PLATFORM_ASSERT(msg)                                              \
     do {                                                                       \
         lwip_assert((msg), __FILE__, __LINE__);                                \
