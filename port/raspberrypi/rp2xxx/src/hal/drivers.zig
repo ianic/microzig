@@ -517,7 +517,7 @@ pub const WiFi = struct {
     const Spi = @import("cyw43439_pio_spi.zig");
     pub const Options = struct {
         handle_irq: bool = false,
-        country: Chip.InitOptions.Country = .{},
+        chip: Chip.InitOptions = .{},
     };
 
     spi: Spi = undefined,
@@ -537,7 +537,7 @@ pub const WiFi = struct {
                 },
             },
             hal.time.sleep_ms,
-            .{ .country = opt.country },
+            opt.chip,
         );
         if (opt.handle_irq) {
             self.set_irq_enabled(true);
