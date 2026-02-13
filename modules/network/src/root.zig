@@ -23,6 +23,8 @@ pub const lwip = @cImport({
 
 const log = std.log.scoped(.lwip);
 
+const ip_addr = if (lwip.LWIP_IPV6 != 0) lwip.ip_addr else lwip.ip4_addr;
+
 pub const Interface = struct {
     const Self = @This();
 
@@ -83,8 +85,10 @@ pub const Interface = struct {
         }
 
         std.mem.copyForwards(u8, &netif.hwaddr, &mac);
-        lwip.netif_create_ip6_linklocal_address(netif, 1);
-        netif.ip6_autoconfig_enabled = 1;
+        if (lwip.LWIP_IPV6 != 0) {
+            lwip.netif_create_ip6_linklocal_address(netif, 1);
+            netif.ip6_autoconfig_enabled = 1;
+        }
         lwip.netif_set_default(netif);
         lwip.netif_set_up(netif);
         lwip.netif_set_status_callback(netif, c_on_netif_status);
@@ -100,7 +104,9 @@ pub const Interface = struct {
         const netif: *lwip.netif = netif_c;
         netif.linkoutput = c_netif_linkoutput;
         netif.output = lwip.etharp_output;
-        netif.output_ip6 = lwip.ethip6_output;
+        if (lwip.LWIP_IPV6 != 0) {
+            netif.output_ip6 = lwip.ethip6_output;
+        }
         netif.mtu = config.mtu;
         netif.flags = lwip.NETIF_FLAG_BROADCAST | lwip.NETIF_FLAG_ETHARP |
             lwip.NETIF_FLAG_ETHERNET | lwip.NETIF_FLAG_IGMP | lwip.NETIF_FLAG_MLD6;
@@ -158,9 +164,14 @@ pub const Interface = struct {
 
     pub fn ready(self: *Self) bool {
         const netif = &self.netif;
+        const ip_assigned: bool = if (lwip.LWIP_IPV6 != 0)
+            (netif.ip_addr.u_addr.ip4.addr != 0 or netif.ip_addr.u_addr.ip6.addr[0] != 0)
+        else
+            netif.ip_addr.addr != 0;
+
         return (netif.flags & lwip.NETIF_FLAG_UP > 0) and
             (netif.flags & lwip.NETIF_FLAG_LINK_UP > 0) and
-            (netif.ip_addr.u_addr.ip4.addr != 0 or netif.ip_addr.u_addr.ip6.addr[0] != 0);
+            ip_assigned;
     }
 
     /// Must be called periodically if poll is not called (e.g when using rx
@@ -291,11 +302,11 @@ pub const Udp = struct {
         ptr: ?*anyopaque,
         _: [*c]lwip.udp_pcb,
         pbuf_c: [*c]lwip.pbuf,
-        addr_c: [*c]const lwip.ip_addr,
+        addr_c: [*c]const ip_addr,
         port: u16,
     ) callconv(.c) void {
         var pbuf: *lwip.pbuf = pbuf_c;
-        const addr: lwip.ip_addr = addr_c[0];
+        const addr: ip_addr = addr_c[0];
         const self: *Self = @ptrCast(@alignCast(ptr.?));
         defer _ = lwip.pbuf_free(pbuf_c);
 
@@ -512,7 +523,7 @@ pub const tcp = struct {
 };
 
 pub const Endpoint = struct {
-    addr: lwip.ip_addr = .{},
+    addr: ip_addr = .{},
     port: u16 = 0,
 
     pub fn format(self: Endpoint, writer: anytype) !void {
