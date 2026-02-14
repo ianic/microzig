@@ -512,11 +512,13 @@ pub const JoinPoller = struct {
 };
 
 pub fn poll(self: *Self) !void {
-    var bytes: [ioctl_request_bytes_len]u8 align(4) = undefined;
-    const rsp, _ = try self.read(&bytes) orelse return;
-    switch (rsp.sdp.channel()) {
-        .event => self.handle_event(rsp),
-        else => self.log_response(rsp),
+    while (true) {
+        var bytes: [ioctl_request_bytes_len]u8 align(4) = undefined;
+        const rsp, _ = try self.read(&bytes) orelse return;
+        switch (rsp.sdp.channel()) {
+            .event => self.handle_event(rsp),
+            else => self.log_response(rsp),
+        }
     }
 }
 
