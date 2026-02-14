@@ -43,6 +43,7 @@ pub const Interface = struct {
 
     pub const Options = struct {
         fixed: ?Fixed = null,
+        hostname: []const u8 = &.{},
 
         pub const Fixed = struct {
             ip: lwip.ip4_addr,
@@ -83,6 +84,9 @@ pub const Interface = struct {
             ) orelse return error.OutOfMemory;
         }
 
+        if (opt.hostname.len > 0) {
+            netif.hostname = opt.hostname.ptr;
+        }
         std.mem.copyForwards(u8, &netif.hwaddr, &mac);
         if (lwip.LWIP_IPV6 != 0) {
             lwip.netif_create_ip6_linklocal_address(netif, 1);
