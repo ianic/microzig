@@ -35,7 +35,6 @@ pub const Interface = struct {
 
     stat: struct {
         poll_count: usize = 0,
-        tick_count: usize = 0,
         recv_packets: usize = 0,
         recv_bytes: usize = 0,
         send_packets: usize = 0,
@@ -174,15 +173,10 @@ pub const Interface = struct {
             ip_assigned;
     }
 
-    /// Must be called periodically if poll is not called (e.g when using rx
-    /// interrupt). Good rule of thumb seems to be every 10-50 ms.
-    pub fn tick(self: *Self) void {
-        self.stat.tick_count +%= 1;
-        lwip.sys_check_timeouts();
-    }
-
-    /// Poll underlying link layer for data packet.
-    pub fn poll(self: *Self) !void {
+    /// Poll underlying link layer for data packet. Returns the time left before
+    /// the next timeout is due. If no timeouts are enqueued, returns
+    /// 0xffffffff.
+    pub fn poll(self: *Self) !u32 {
         self.stat.poll_count +%= 1;
         lwip.sys_check_timeouts();
         const netif = &self.netif;
@@ -228,6 +222,13 @@ pub const Interface = struct {
 
             if (rsp.next_packet_available) |next_packet_available| if (!next_packet_available) break;
         }
+
+        var next_timeout = lwip.sys_timeouts_sleeptime();
+        if (next_timeout == 0) {
+            lwip.sys_check_timeouts();
+            next_timeout = lwip.sys_timeouts_sleeptime();
+        }
+        return next_timeout;
     }
 
     pub fn log_mem_stats(self: *Self) void {
