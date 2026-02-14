@@ -208,17 +208,19 @@ pub fn init(self: *Self, opt: InitOptions) !void {
         try self.set_cmd(.up, &.{});
     }
 
-    { // Set power mode parameters cyw43_ll_wifi_pm
-        try self.set_var("pm2_sleep_ret", &.{0xc8});
-        try self.set_var("bcn_li_bcn", &.{1});
-        try self.set_var("bcn_li_dtim", &.{1});
-        try self.set_var("assoc_listen", &.{0x0a});
-        try self.set_cmd(.set_gmode, &.{1}); // auto
-        try self.set_cmd(.set_band, &.{0}); // any
-        // try self.set_cmd(.set_pm, &.{2});// power mode
-    }
+    try self.set_power_mode(.none);
+    try self.set_cmd(.set_gmode, &.{1}); // auto
+    try self.set_cmd(.set_band, &.{0}); // any
 
     self.log_init();
+}
+
+pub fn set_power_mode(self: *Self, pm: PowerMode) !void {
+    try self.set_var("pm2_sleep_ret", mem.asBytes(&pm.pm2_sleep_ret_rounded()));
+    try self.set_var("bcn_li_bcn", &.{pm.bcn_li_bcn});
+    try self.set_var("bcn_li_dtim", &.{pm.bcn_li_dtim});
+    try self.set_var("assoc_listen", &.{pm.assoc_listen});
+    try self.set_cmd(.set_pm, &.{@intFromEnum(pm.mode)});
 }
 
 fn enable_events(self: *Self, events: []const ioctl.EventType) !void {
@@ -1029,3 +1031,63 @@ const SharedMemLog = extern struct {
     idx: u32,
     out_idx: u32,
 };
+
+// ref: https://github.com/georgerobotics/cyw43-driver/blob/dd7568229f3bf7a37737b9e1ef250c26efe75b23/src/cyw43.h#L609
+pub const PowerMode = struct {
+    mode: enum(u8) {
+        /// No power saving
+        no = 0,
+        /// Aggressive power saving which reduces wifi throughput
+        pm1 = 1,
+        /// Power saving with High throughput (preferred). Saves power when
+        /// there is no wifi activity for some time.
+        pm2 = 2,
+    },
+    /// The maximum time to wait before going back to sleep for pm2 mode. Value
+    /// measured in milliseconds and must be between 10 and 2000ms and divisible
+    /// by 10
+    pm2_sleep_ret: u16 = 10,
+    /// Wake period measured in beacon periods
+    bcn_li_bcn: u8 = 0,
+    /// Wake interval measured in DTIMs. If this is set to 0, the wake interval
+    /// is measured in beacon periods
+    bcn_li_dtim: u8 = 0,
+    /// Wake interval sent to the access point
+    assoc_listen: u8 = 0,
+
+    /// No power management
+    pub const none: PowerMode = .{
+        .mode = .no,
+    };
+
+    /// Aggressive power management mode for optimal power usage at the cost of performance
+    pub const aggressive: PowerMode = .{
+        .mode = .pm1,
+    };
+
+    /// Performance power management mode where more power is used to increase performance
+    pub const performance: PowerMode = .{
+        .mode = .pm2,
+        .pm2_sleep_ret = 200,
+        .bcn_li_bcn = 1,
+        .bcn_li_dtim = 1,
+        .assoc_listen = 10,
+    };
+
+    /// Must be between 10 and 2000ms and divisible by 10
+    fn pm2_sleep_ret_rounded(pm: PowerMode) u16 {
+        var val: u16 = (pm.pm2_sleep_ret / 10) * 10;
+        if (val > 2000) val = 2000;
+        if (val < 10) val = 10;
+        return val;
+    }
+};
+
+test "PowerMode pm2_sleep_ret rounding" {
+    var pm: PowerMode = .{ .mode = .pm2, .pm2_sleep_ret = 111 };
+    try testing.expectEqual(110, pm.pm2_sleep_ret_rounded());
+    pm.pm2_sleep_ret = 11111;
+    try testing.expectEqual(2000, pm.pm2_sleep_ret_rounded());
+    pm.pm2_sleep_ret = 0;
+    try testing.expectEqual(10, pm.pm2_sleep_ret_rounded());
+}

@@ -7,6 +7,7 @@ const Bus = @import("cyw43439/bus.zig");
 const WiFi = @import("cyw43439/wifi.zig");
 pub const JoinOptions = WiFi.JoinOptions;
 pub const InitOptions = WiFi.InitOptions;
+pub const PowerMode = WiFi.PowerMode;
 
 const log = std.log.scoped(.cyw43);
 
@@ -118,6 +119,10 @@ pub fn link(self: *Self) Link {
             .send = send_zc,
         },
     };
+}
+
+pub fn set_power_mode(self: *Self, pm: PowerMode) !void {
+    try self.wifi.set_power_mode(pm);
 }
 
 // References:
