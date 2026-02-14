@@ -49,7 +49,7 @@ pub fn main() !void {
     var ts = time.get_time_since_boot();
     while (true) {
         // run lwip poller
-        nic.poll() catch |err| {
+        _ = nic.poll() catch |err| {
             log.err("net pool {}", .{err});
         };
 

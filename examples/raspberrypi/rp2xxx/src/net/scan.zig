@@ -74,7 +74,7 @@ pub fn main() !void {
     ticks = 0;
     while (true) : (ticks +%= 1) {
         // run lwip poller
-        try nic.poll();
+        _ = try nic.poll();
         // blink
         if (ticks % 50 == 0) {
             led.toggle();

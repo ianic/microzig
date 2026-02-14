@@ -71,39 +71,20 @@ pub fn main() !void {
     var nic: net.Interface = .{ .link = wifi.link() };
     try nic.init(wifi.mac, try secrets.nic_options());
 
-    timer.schedule_alarm(.alarm0, timer.read_low() +% tick_interval_ms * 1000);
     while (true) {
-        // get and reset wakeup source
-        const src = wakeup_source;
-        wakeup_source = .{};
+        // Interrupt will be enabled after last packet is read
+        const next_timeout = try nic.poll();
 
-        if (src.wifi) {
-            // Interrupt will be enabled after last packet is read
-            try nic.poll();
-            log.debug("{}", .{nic.stat});
-        }
-        if (src.tick) {
-            nic.tick();
-            if (nic.stat.tick_count % 5 == 0) {
-                led.toggle();
-            }
-        }
-        cpu.wfe();
+        // log.debug("{} {}", .{ next_timeout, nic.stat });
+        timer.schedule_alarm(.alarm0, timer.read_low() +% next_timeout * 1000);
+        cpu.wfi();
+        led.toggle();
     }
 }
-
-const tick_interval_ms = 50;
-
-var wakeup_source: packed struct {
-    wifi: bool = false,
-    tick: bool = false,
-} = .{};
 
 fn gpio_interrupt() linksection(".ram_text") callconv(.c) void {
     // Disable interrupts storm, store source and wake up main loop.
     wifi_driver.disable_irq();
-    wakeup_source.wifi = true;
-    cpu.sev();
 
     // // If there are multiple triggers use `disable_irq_if` in the triggers
     // // iterator. It will disable interrupt wifi_driver is the source of
@@ -111,16 +92,11 @@ fn gpio_interrupt() linksection(".ram_text") callconv(.c) void {
     // var iter = gpio.IrqEventIter{};
     // while (iter.next()) |trg| {
     //     if (wifi_driver.disable_irq_if(trg)) {
-    //         wakeup_source.packet_ready = true;
-    //         cpu.sev();
     //         return;
     //     }
     // }
 }
 
 fn timer_interrupt() linksection(".ram_text") callconv(.c) void {
-    wakeup_source.tick = true;
-    cpu.sev();
     timer.clear_interrupt(.alarm0);
-    timer.schedule_alarm(.alarm0, timer.read_low() +% tick_interval_ms * 1000);
 }
