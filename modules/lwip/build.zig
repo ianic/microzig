@@ -108,6 +108,8 @@ const files = [_][]const u8{
     "netif/lowpan6_common.c",
     "netif/zepif.c",
 
+    "apps/sntp/sntp.c"
+
     // PPP
     // "netif/ppp/polarssl/arc4.c",
     // "netif/ppp/polarssl/des.c",

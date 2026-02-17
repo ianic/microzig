@@ -28,6 +28,8 @@ extern void lwip_lock_interrupts(bool *state);
 extern void lwip_unlock_interrupts(bool state);
 extern void lwip_assert(const char *msg, const char *file, int line);
 extern void lwip_diag(const char *fmt, ...);
+extern void lwip_sntp_set_time(uint32_t sec);
+extern const char *lwip_sntp_format_time(uint32_t sec);
 
 #define LWIP_PLATFORM_DIAG(x)                                                  \
     do {                                                                       \
@@ -54,10 +56,12 @@ extern void lwip_diag(const char *fmt, ...);
 
 // Critical section support:
 // https://www.nongnu.org/lwip/2_1_x/group__sys__prot.html
-
 #define SYS_ARCH_DECL_PROTECT(lev) bool lev
 #define SYS_ARCH_PROTECT(lev) lwip_lock_interrupts(&lev)
 #define SYS_ARCH_UNPROTECT(lev) lwip_unlock_interrupts(lev)
+
+#define SNTP_SET_SYSTEM_TIME(sec) lwip_sntp_set_time(sec)
+#define sntp_format_time(sec) lwip_sntp_format_time(sec)
 
 // Rename sys_now to lwip_sys_now
 // https://github.com/lwip-tcpip/lwip/blob/6ca936f6b588cee702c638eee75c2436e6cf75de/src/include/lwip/sys.h#L446

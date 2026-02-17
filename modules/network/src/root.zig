@@ -19,6 +19,7 @@ pub const lwip = @cImport({
     @cInclude("lwip/etharp.h");
     @cInclude("lwip/ethip6.h");
     @cInclude("lwip/timeouts.h");
+    @cInclude("lwip/apps/sntp.h");
 });
 
 const log = std.log.scoped(.lwip);
@@ -44,6 +45,7 @@ pub const Interface = struct {
     pub const Options = struct {
         fixed: ?Fixed = null,
         hostname: []const u8 = &.{},
+        sntp_server: []const u8 = &.{},
 
         pub const Fixed = struct {
             ip: lwip.ip4_addr,
@@ -99,6 +101,9 @@ pub const Interface = struct {
         if (opt.fixed == null) {
             lwip.dhcp_set_struct(netif, &self.dhcp);
             try c_err(lwip.dhcp_start(netif));
+        }
+        if (opt.sntp_server.len > 0) {
+            sntp.init(opt.sntp_server);
         }
     }
 
@@ -545,6 +550,69 @@ pub const Endpoint = struct {
     }
 };
 
+pub const sntp = struct {
+    pub const DateTime = struct {
+        year: u16,
+        month: u4,
+        day: u5,
+        hour: u5,
+        min: u6,
+        sec: u6,
+        week_day: u8,
+    };
+
+    pub var time: struct {
+        unix: u32 = 0,
+        ts: u32 = 0,
+    } = .{};
+
+    pub fn init(server: []const u8) void {
+        lwip.sntp_setoperatingmode(lwip.SNTP_OPMODE_POLL);
+        lwip.sntp_setservername(0, server.ptr);
+        lwip.sntp_init();
+    }
+
+    fn set_time(unix_time: u32) void {
+        sntp.time.unix = unix_time;
+        sntp.time.ts = lwip.sys_now();
+    }
+
+    pub fn unix() u32 {
+        if (sntp.time.ts == 0) return 0;
+        return sntp.time.unix + (lwip.sys_now() -% sntp.time.ts) / 1000;
+    }
+
+    pub fn date_time(tz_sec: u32) ?DateTime {
+        const unix_time = sntp.unix();
+        if (unix_time == 0) return null;
+        return date_time_from_unix(unix_time + tz_sec);
+    }
+
+    fn date_time_from_unix(unix_time: u32) DateTime {
+        const epoch = std.time.epoch.EpochSeconds{ .secs = unix_time };
+        const epoch_day = epoch.getEpochDay();
+        const seconds = epoch.getDaySeconds();
+
+        const year = epoch_day.calculateYearDay();
+        const month = year.calculateMonthDay();
+
+        const hour = seconds.getHoursIntoDay();
+        const min = seconds.getMinutesIntoHour();
+        const sec = seconds.getSecondsIntoMinute();
+        const week_day: u8 = @intCast((epoch_day.day + 4) % 7); // 0=Sun,1=Mon,...
+
+        return .{
+            .year = year.year,
+            .month = month.month.numeric(),
+            .day = month.day_index + 1,
+            .hour = hour,
+            .min = min,
+            .sec = sec,
+            .week_day = week_day,
+        };
+    }
+};
+
 pub const Error = error{
     /// Out of memory error.
     OutOfMemory,
@@ -637,3 +705,21 @@ export fn lwip_diag(fmt: [*:0]const u8, ...) void {
     _ = fmt;
     _ = &args;
 }
+
+export fn lwip_sntp_set_time(sec: u32) void {
+    sntp.set_time(sec);
+}
+
+/// Returns string from unix_time. Used in lwip sntp when LWIP_DEBUG is
+/// defined to format debug message without including libc time.h
+export fn lwip_sntp_format_time(sec: u32) ?[*:0]const u8 {
+    const dt = sntp.date_time_from_unix(sec +% 2085978496);
+
+    return std.fmt.bufPrintZ(
+        &format_time_buf,
+        "{d:0>4}-{d:0>2}-{d:0>2} {d:0>2}:{d:0>2}:{d:0>2}",
+        .{ dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec },
+    ) catch return null;
+}
+
+var format_time_buf: [20]u8 = undefined;

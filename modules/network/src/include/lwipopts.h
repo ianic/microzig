@@ -42,4 +42,9 @@
 #define PBUF_STATS 1
 #define SYS_STATS 1
 
+// sntp
+#define LWIP_SNTP 1
+#define SNTP_SERVER_DNS 1
+#define SNTP_GET_SERVERS_FROM_DHCP 1
+
 #endif // lwipopts_h
